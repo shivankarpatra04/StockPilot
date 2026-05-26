@@ -27,6 +27,7 @@ export default function DashboardSectionNav() {
   const [activeId, setActiveId] = useState<string>(SECTIONS[0].id);
 
   useEffect(() => {
+    const scrollContainer = document.querySelector("main");
     const observers: IntersectionObserver[] = [];
     const onIntersect: IntersectionObserverCallback = (entries) => {
       const visible = entries
@@ -38,6 +39,7 @@ export default function DashboardSectionNav() {
       const el = document.getElementById(s.id);
       if (!el) return;
       const obs = new IntersectionObserver(onIntersect, {
+        root: scrollContainer,
         rootMargin: "-30% 0px -50% 0px",
         threshold: [0, 0.25, 0.5, 0.75, 1],
       });
@@ -50,8 +52,14 @@ export default function DashboardSectionNav() {
   const handleJump = (id: string) => {
     const el = document.getElementById(id);
     if (!el) return;
-    const y = el.getBoundingClientRect().top + window.scrollY - 80;
-    window.scrollTo({ top: y, behavior: "smooth" });
+    const scrollContainer = document.querySelector("main");
+    if (!scrollContainer) return;
+    const y =
+      el.getBoundingClientRect().top -
+      scrollContainer.getBoundingClientRect().top +
+      scrollContainer.scrollTop -
+      80;
+    scrollContainer.scrollTo({ top: y, behavior: "smooth" });
   };
 
   return (
