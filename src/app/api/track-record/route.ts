@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -92,10 +94,10 @@ export async function GET(request: NextRequest) {
       : 0;
 
     // 3. Create historical curve for Recharts (Cumulative Return Chart)
-    // Starting with a base balance of ₹100,000, compounding or adding returnPct * 1000 (standard lot allocation)
+    // Starting with a base balance of â‚¹100,000, compounding or adding returnPct * 1000 (standard lot allocation)
     let runningBalance = 100000;
     const chartData = resolvedChronological.map(s => {
-      const profitValue = (s.returnPct || 0) * 1000; // Simulated ₹1,000 per 1% return
+      const profitValue = (s.returnPct || 0) * 1000; // Simulated â‚¹1,000 per 1% return
       runningBalance += profitValue;
       return {
         date: new Date(s.resolvedAt!).toLocaleDateString("en-IN", { month: "short", day: "numeric" }),

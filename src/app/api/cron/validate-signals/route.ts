@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { fetchStockData } from "@/lib/stocks";
@@ -211,7 +213,7 @@ async function seedMockSignals() {
 
     let triggerText = "";
     if (type === "SWING") {
-      triggerText = `Retest of key daily support at ₹${stopLoss} verified with heavy volume accumulation. Favorable risk-to-reward.`;
+      triggerText = `Retest of key daily support at â‚¹${stopLoss} verified with heavy volume accumulation. Favorable risk-to-reward.`;
     } else if (type === "BREAKOUT") {
       triggerText = `Cleared major multi-week resistance level. RSI is supportive at ${Math.floor(Math.random()*15)+50} without overbought reading.`;
     } else if (type === "CATCHUP") {

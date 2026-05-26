@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -15,7 +17,7 @@ export async function GET(request: NextRequest) {
       }
     });
 
-    // Most-recent scan timestamp — shared with /api/best-trade so the UI
+    // Most-recent scan timestamp â€” shared with /api/best-trade so the UI
     // can confirm both sections are showing the same data snapshot.
     const dataAsOf = stocks.reduce<number>((max, s) => {
       const t = new Date(s.lastUpdated).getTime();
@@ -64,7 +66,7 @@ export async function GET(request: NextRequest) {
         support: s.analysis.support,
         target: s.analysis.target,
         stopLoss: s.analysis.stopLoss,
-        reasoning: `Deeply oversold at RSI ${s.analysis.rsi}. Potential bounce from support ₹${s.analysis.support}.`,
+        reasoning: `Deeply oversold at RSI ${s.analysis.rsi}. Potential bounce from support â‚¹${s.analysis.support}.`,
         type: "Oversold Bounce"
       }));
 
@@ -132,10 +134,10 @@ export async function GET(request: NextRequest) {
           name: s.shortName,
           direction: isLong ? "LONG" : "SHORT",
           expiryDays,
-          entry: `₹${entryMin.toFixed(2)} – ₹${entryMax.toFixed(2)}`,
-          stopLoss: `₹${stopLoss}`,
-          target1: `₹${target1}`,
-          target2: `₹${target2}`,
+          entry: `â‚¹${entryMin.toFixed(2)} â€“ â‚¹${entryMax.toFixed(2)}`,
+          stopLoss: `â‚¹${stopLoss}`,
+          target1: `â‚¹${target1}`,
+          target2: `â‚¹${target2}`,
           riskReward: `1:${rrRatio}`,
           trigger: s.analysis.reasoning,
           confidence: isLong ? s.analysis.score : 100 - s.analysis.score
@@ -205,7 +207,7 @@ export async function GET(request: NextRequest) {
           daysToEarnings,
           record: s.analysis.score >= 70 ? "Beat 4 of last 5 quarters" : s.analysis.score >= 50 ? "Beat 3 of last 5 quarters" : "Missed 3 of last 5 quarters",
           isRecordPositive: isPositive,
-          expectedMove: `±${expectedMovePercent}%`,
+          expectedMove: `Â±${expectedMovePercent}%`,
           verdict: `${s.shortName} shows ${s.analysis.score >= 60 ? "positive accumulation" : s.analysis.score <= 40 ? "distribution patterns" : "neutral compression"} on charts before results release. ${s.analysis.reasoning}`,
           action,
           sentiment,
@@ -244,8 +246,8 @@ export async function GET(request: NextRequest) {
         const probability = Math.min(96, Math.max(70, 70 + (hash % 27)));
 
         const reasoning = isAbove
-          ? `${s.shortName} successfully cleared major daily resistance at ₹${res} on a strong ${volumeSurge}x volume surge. RSI at ${s.analysis.rsi} supports strong breakout continuation.`
-          : `${s.shortName} is compressing within ${percentString}% below its key monthly breakout resistance of ₹${res}. Accumulating volume points to an imminent breakout.`;
+          ? `${s.shortName} successfully cleared major daily resistance at â‚¹${res} on a strong ${volumeSurge}x volume surge. RSI at ${s.analysis.rsi} supports strong breakout continuation.`
+          : `${s.shortName} is compressing within ${percentString}% below its key monthly breakout resistance of â‚¹${res}. Accumulating volume points to an imminent breakout.`;
 
         return {
           symbol: s.symbol,
@@ -275,10 +277,10 @@ export async function GET(request: NextRequest) {
       name: s.name,
       direction: s.direction,
       expiryDays: Math.max(3, Math.ceil((new Date(s.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))),
-      entry: `₹${s.entryPrice.toFixed(2)}`,
-      stopLoss: `₹${s.stopLoss.toFixed(2)}`,
-      target1: `₹${s.targetPrice.toFixed(2)}`,
-      target2: `₹${(s.targetPrice * 1.05).toFixed(2)}`,
+      entry: `â‚¹${s.entryPrice.toFixed(2)}`,
+      stopLoss: `â‚¹${s.stopLoss.toFixed(2)}`,
+      target1: `â‚¹${s.targetPrice.toFixed(2)}`,
+      target2: `â‚¹${(s.targetPrice * 1.05).toFixed(2)}`,
       riskReward: "1:2.0",
       trigger: s.triggerText,
       confidence: s.confidence
@@ -318,7 +320,7 @@ export async function GET(request: NextRequest) {
       daysToEarnings: Math.max(1, Math.ceil((new Date(e.expiryDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24))),
       record: e.confidence >= 70 ? "Beat 4 of last 5 quarters" : "Beat 3 of last 5 quarters",
       isRecordPositive: e.confidence >= 50,
-      expectedMove: "±4.9%",
+      expectedMove: "Â±4.9%",
       verdict: e.triggerText,
       action: e.direction,
       sentiment: e.direction === "LONG" ? "Beat Likely" : "Miss Risk"
@@ -400,9 +402,9 @@ async function saveNewSignalsToLedger(swingTrades: any[], breakoutPlays: any[], 
       });
       if (existing) continue;
 
-      const entryPrice = parseFloat(trade.entry.replace(/₹|\s/g, "").split("–")[0]) || 0;
-      const stopLoss = parseFloat(trade.stopLoss.replace(/₹|\s/g, "")) || 0;
-      const targetPrice = parseFloat(trade.target1.replace(/₹|\s/g, "")) || 0;
+      const entryPrice = parseFloat(trade.entry.replace(/â‚¹|\s/g, "").split("â€“")[0]) || 0;
+      const stopLoss = parseFloat(trade.stopLoss.replace(/â‚¹|\s/g, "")) || 0;
+      const targetPrice = parseFloat(trade.target1.replace(/â‚¹|\s/g, "")) || 0;
       
       const expiryDate = new Date();
       expiryDate.setDate(now.getDate() + (trade.expiryDays || 7));

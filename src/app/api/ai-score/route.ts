@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 // filepath: src/app/api/ai-score/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { computeAIScore } from "@/lib/ai-score";

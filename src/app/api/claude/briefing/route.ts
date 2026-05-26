@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
@@ -90,11 +92,11 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     if (mode === "expert") {
       const sentimentEmoji =
-        sentiment === "Bullish" ? "🟢" : sentiment === "Bearish" ? "🔴" : "🟡";
+        sentiment === "Bullish" ? "ðŸŸ¢" : sentiment === "Bearish" ? "ðŸ”´" : "ðŸŸ¡";
 
       data = {
         mode: "expert",
-        title: `📊 Market Briefing — ${sentiment} ${sentimentEmoji} · ${today}`,
+        title: `ðŸ“Š Market Briefing â€” ${sentiment} ${sentimentEmoji} Â· ${today}`,
         summary: `${days}-day scan of ${total} Nifty 500 stocks shows ${gainers} gainers and ${losers} losers. ` +
           `Market breadth is ${sentiment.toLowerCase()}, with ${((gainers / total) * 100).toFixed(0)}% of stocks advancing. ` +
           (topSector
@@ -106,20 +108,20 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         bulletPoints: [
           topSector && secondSector
             ? {
-                label: `Sector Rotation — ${topSector.name} ${topSector.avg >= 0 ? "↑" : "↓"}`,
-                text: `${topSector.name} (${pct(topSector.avg)}) and ${secondSector.name} (${pct(secondSector.avg)}) are leading the rotation. ${weakSector?.name} (${pct(weakSector?.avg ?? 0)}) is underperforming — watch for catch-up setups there.`,
+                label: `Sector Rotation â€” ${topSector.name} ${topSector.avg >= 0 ? "â†‘" : "â†“"}`,
+                text: `${topSector.name} (${pct(topSector.avg)}) and ${secondSector.name} (${pct(secondSector.avg)}) are leading the rotation. ${weakSector?.name} (${pct(weakSector?.avg ?? 0)}) is underperforming â€” watch for catch-up setups there.`,
               }
             : { label: "Sector Data", text: "Insufficient sector data for this timeframe." },
           topGainer && topLoser
             ? {
-                label: `Top Mover — ${name(topGainer)} ${pct(topGainer.change)}`,
+                label: `Top Mover â€” ${name(topGainer)} ${pct(topGainer.change)}`,
                 text: `${name(topGainer)} leads all gainers at ${pct(topGainer.change)} with buy score ${topGainer.score}. On the downside, ${name(topLoser)} has dropped ${pct(topLoser.change)}. ` +
-                  (topLoser.rsi < 40 ? `RSI at ${topLoser.rsi} — potential reversal zone forming.` : `Monitor ${name(topLoser)} for continuation risk.`),
+                  (topLoser.rsi < 40 ? `RSI at ${topLoser.rsi} â€” potential reversal zone forming.` : `Monitor ${name(topLoser)} for continuation risk.`),
               }
             : { label: "Price Action", text: "Price data loading." },
           topScore
             ? {
-                label: `Highest Buy Score — ${name(topScore)} · ${topScore.score}%`,
+                label: `Highest Buy Score â€” ${name(topScore)} Â· ${topScore.score}%`,
                 text: `${name(topScore)} ranks #1 with a buy score of ${topScore.score}% over the last ${days} days. ${topScore.reasoning}`,
               }
             : { label: "Top Signal", text: "Signal data loading." },
@@ -127,52 +129,52 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
         checklist: [
           {
             id: "e1",
-            text: `Review ${topSector?.name ?? "leading"} sector stocks — sector is up ${pct(topSector?.avg ?? 0)} over ${days}D`,
+            text: `Review ${topSector?.name ?? "leading"} sector stocks â€” sector is up ${pct(topSector?.avg ?? 0)} over ${days}D`,
           },
           {
             id: "e2",
             text: topScore
-              ? `Consider ${name(topScore)} as a primary entry — buy score ${topScore.score}%, ${pct(topScore.change)} over ${days}D`
+              ? `Consider ${name(topScore)} as a primary entry â€” buy score ${topScore.score}%, ${pct(topScore.change)} over ${days}D`
               : "Review high buy-score stocks from the Best Trade card",
           },
           {
             id: "e3",
             text: oversold
-              ? `Watch ${name(oversold)} — RSI deeply oversold at ${oversold.rsi}, potential bounce setup forming`
+              ? `Watch ${name(oversold)} â€” RSI deeply oversold at ${oversold.rsi}, potential bounce setup forming`
               : "Scan for oversold RSI (<35) setups in the Opportunities tab",
           },
         ],
       };
     } else {
-      // Simple mode — beginner-friendly language
+      // Simple mode â€” beginner-friendly language
       const moodEmoji =
-        sentiment === "Bullish" ? "😊" : sentiment === "Bearish" ? "😟" : "😐";
+        sentiment === "Bullish" ? "ðŸ˜Š" : sentiment === "Bearish" ? "ðŸ˜Ÿ" : "ðŸ˜";
       const moodWord =
         sentiment === "Bullish" ? "mostly going UP today" :
-        sentiment === "Bearish" ? "mostly going DOWN today" : "going sideways — mixed signals";
+        sentiment === "Bearish" ? "mostly going DOWN today" : "going sideways â€” mixed signals";
 
       data = {
         mode: "simple",
-        title: `${moodEmoji} Market Update — ${today}`,
+        title: `${moodEmoji} Market Update â€” ${today}`,
         summary: `Out of ${total} big Indian stocks, ${gainers} are going up and ${losers} are going down right now. ` +
           `The overall market is ${moodWord}. ` +
           (topSector ? `The ${topSector.name} sector is doing the best today.` : ""),
         bulletPoints: [
           topSector
             ? {
-                label: `Best sector today: ${topSector.name} 🏆`,
+                label: `Best sector today: ${topSector.name} ðŸ†`,
                 text: `${topSector.name} stocks are up an average of ${pct(topSector.avg)}. If you own stocks in this group, that's great news!`,
               }
             : { label: "Sector Update", text: "Sector data is being processed." },
           topGainer
             ? {
-                label: `Biggest winner: ${name(topGainer)} 🚀`,
-                text: `${name(topGainer)} is up ${pct(topGainer.change)} — one of the strongest movers right now. Our system gives it a confidence score of ${topGainer.score}%.`,
+                label: `Biggest winner: ${name(topGainer)} ðŸš€`,
+                text: `${name(topGainer)} is up ${pct(topGainer.change)} â€” one of the strongest movers right now. Our system gives it a confidence score of ${topGainer.score}%.`,
               }
             : { label: "Top Gainer", text: "Data loading." },
           topScore
             ? {
-                label: `Today's smart pick: ${name(topScore)} ⭐`,
+                label: `Today's smart pick: ${name(topScore)} â­`,
                 text: `Our AI gave ${name(topScore)} the highest buy signal (${topScore.score}%) based on its price pattern and trend over the last ${days} days.`,
               }
             : { label: "Smart Pick", text: "Processing recommendations." },
@@ -181,19 +183,19 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
           {
             id: "s1",
             text: topScore
-              ? `Check out ${name(topScore)} — our #1 pick right now with ${topScore.score}% confidence`
+              ? `Check out ${name(topScore)} â€” our #1 pick right now with ${topScore.score}% confidence`
               : "Visit the Best Trade card for today's top recommendation",
           },
           {
             id: "s2",
             text: topSector
-              ? `Look at ${topSector.name} stocks — this sector is the market leader today`
+              ? `Look at ${topSector.name} stocks â€” this sector is the market leader today`
               : "Explore the Sector Heatmap to see which sectors are moving",
           },
           {
             id: "s3",
             text: oversold
-              ? `${name(oversold)} looks oversold — may bounce back soon. Beginners: check with your advisor first`
+              ? `${name(oversold)} looks oversold â€” may bounce back soon. Beginners: check with your advisor first`
               : "Review the Opportunities page for ready-to-act trade ideas",
           },
         ],
@@ -202,7 +204,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
 
     return NextResponse.json(data, {
       headers: {
-        // Cache for 15 minutes — fresh enough without hammering the DB
+        // Cache for 15 minutes â€” fresh enough without hammering the DB
         "Cache-Control": "private, s-maxage=900, stale-while-revalidate=120",
       },
     });
@@ -211,7 +213,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     return NextResponse.json(
       {
         mode: "simple",
-        title: "⚠️ Market briefing temporarily unavailable.",
+        title: "âš ï¸ Market briefing temporarily unavailable.",
         summary:
           "We are currently experiencing slight delays in retrieving market data. Please try refreshing in a moment.",
         bulletPoints: [],

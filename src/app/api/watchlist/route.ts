@@ -1,3 +1,5 @@
+﻿export const dynamic = "force-dynamic";
+
 // filepath: src/app/api/watchlist/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
