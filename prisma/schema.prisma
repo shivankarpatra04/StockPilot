@@ -1,0 +1,117 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Plan {
+  FREE
+  PRO
+}
+
+model User {
+  id         String      @id @default(cuid())
+  email      String      @unique
+  name       String?
+  image      String?
+  password   String?
+  plan       Plan        @default(FREE)
+  createdAt  DateTime    @default(now())
+  updatedAt  DateTime    @updatedAt
+  watchlists Watchlist[]
+  alerts     Alert[]
+
+  @@map("users")
+}
+
+model Watchlist {
+  id        String           @id @default(cuid())
+  userId    String
+  name      String
+  createdAt DateTime         @default(now())
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stocks    WatchlistStock[]
+
+  @@map("watchlists")
+}
+
+model WatchlistStock {
+  id          String    @id @default(cuid())
+  watchlistId String
+  symbol      String
+  group       String?
+  price       Float?    @map("current_price")
+  buyPrice    Float?    @map("buy_price")
+  change      Float?
+  verdict     String?
+  verdictText String?
+  confidence  Int?
+  lastUpdated DateTime?
+  addedAt     DateTime  @default(now())
+  watchlist   Watchlist @relation(fields: [watchlistId], references: [id], onDelete: Cascade)
+
+  @@unique([watchlistId, symbol])
+  @@map("watchlist_stocks")
+}
+
+model Alert {
+  id          String    @id @default(cuid())
+  userId      String
+  symbol      String
+  condition   String
+  targetPrice Float
+  triggered   Boolean   @default(false)
+  triggeredAt DateTime?
+  createdAt   DateTime  @default(now())
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("alerts")
+}
+
+model ScannedStock {
+  symbol        String   @id
+  shortName     String?
+  sector        String?
+  price         Float
+  change        Float
+  pe            Float?
+  volume        Int?
+  avgVolume     Int?
+  fiftyDayMA    Float?
+  revenueGrowth Float?
+  analysisData  Json?    // Stores precomputed scores by timeframe {"30": {score: 85, target: 150...}}
+  lastUpdated   DateTime @default(now())
+
+  @@map("scanned_stocks")
+}
+
+model TradingSignal {
+  id           String    @id @default(cuid())
+  symbol       String    // e.g. "RELIANCE:NSE"
+  name         String    // e.g. "Reliance Industries"
+  type         String    // "SWING", "BREAKOUT", "CATCHUP", "EARNINGS"
+  direction    String    // "LONG" | "SHORT"
+  entryPrice   Float     // entry price at time of signal
+  stopLoss     Float     // stop loss level
+  targetPrice  Float     // profit target level
+  confidence   Int       // confidence score (0-100)
+  triggerText  String    // technical trigger reasoning
+  status       String    // "ACTIVE" | "SUCCESSFUL" | "UNSUCCESSFUL" | "EXPIRED"
+  createdAt    DateTime  @default(now())
+  expiryDate   DateTime  // date when the signal expires
+  resolvedAt   DateTime? // date when target or stop loss was hit
+  peakPrice    Float?    // highest (for long) or lowest (for short) price hit
+  returnPct    Float?    // return percentage upon resolution
+  lastChecked  DateTime  @default(now())
+
+  @@index([status])
+  @@index([symbol])
+  @@map("trading_signals")
+}
+
