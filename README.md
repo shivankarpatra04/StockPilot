@@ -1,36 +1,51 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# StockPilot AI — Setup Guide
 
-## Getting Started
-
-First, run the development server:
+## Quick Start
 
 ```bash
+# 1. Navigate into the project
+cd stockpilot-temp
+
+# 2. Copy the environment file and fill in your values
+cp .env.local.example .env.local
+
+# 3. Push database schema (after setting DATABASE_URL)
+npx prisma db push
+
+# 4. Start the dev server
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Environment Variables
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| Variable | Where to Get |
+|---|---|
+| `NEXTAUTH_SECRET` | Run: `openssl rand -base64 32` |
+| `NEXTAUTH_URL` | `http://localhost:3000` (dev) |
+| `NEXT_PUBLIC_SUPABASE_URL` | [supabase.com](https://supabase.com) → Project → Settings → API |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Same as above |
+| `DATABASE_URL` | Supabase → Project → Settings → Database → URI |
+| `ANTHROPIC_API_KEY` | [console.anthropic.com](https://console.anthropic.com) |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Features (what's working)
 
-## Learn More
+- ✅ **Landing page** — hero with glassmorphism widget, features grid, pricing, footer
+- ✅ **Sign in / Register** — auto-creates account on first login
+- ✅ **Dashboard** — market stats, watchlist snapshot, AI briefing, opportunities
+- ✅ **Stock Comparison** — live Yahoo Finance data, AI scores, bar chart, Claude verdict
+- ✅ **All API routes** — `/api/stock/quote`, `/api/ai-score`, `/api/claude/*`, `/api/watchlist`
+- ✅ **TypeScript** — zero type errors (`tsc --noEmit` passes)
+- ✅ **Prisma** — schema + client generated
 
-To learn more about Next.js, take a look at the following resources:
+## Deployment (Vercel)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. Push to GitHub
+2. Import repo in Vercel
+3. Add all env vars in Vercel dashboard
+4. Deploy
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Notes
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Without a `DATABASE_URL`, auth and watchlist features won't work, but the landing page and stock comparison will still function
+- Without an `ANTHROPIC_API_KEY`, AI briefing and comparison verdict show a graceful fallback message
+- Yahoo Finance data requires no API key (public endpoints)
