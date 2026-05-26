@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, Suspense } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import EarningsCatalystPlays from "@/components/EarningsCatalystPlays";
 import SectorCatchUpTrades from "@/components/SectorCatchUpTrades";
@@ -78,6 +78,14 @@ const TABS = [
 type TabId = (typeof TABS)[number]["id"];
 
 export default function OpportunitiesPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-background" />}>
+      <OpportunitiesContent />
+    </Suspense>
+  );
+}
+
+function OpportunitiesContent() {
   const { analysisDays, isSimpleMode, setAnalysisDays } = useAppStore();
   const searchParams = useSearchParams();
   const router = useRouter();
