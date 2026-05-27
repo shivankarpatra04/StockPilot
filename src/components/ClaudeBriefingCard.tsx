@@ -144,35 +144,36 @@ export default function ClaudeBriefingCard() {
       <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-primary/30 to-transparent" />
 
       <CardHeader className="pb-3 border-b border-border/40">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center relative">
+        <div className="flex items-start justify-between gap-2">
+          <div className="flex items-center gap-2 min-w-0 flex-1">
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-primary/20 to-primary/5 border border-primary/30 flex items-center justify-center relative flex-shrink-0">
               <Sparkles className="w-4 h-4 text-primary animate-pulse" />
             </div>
-            <div>
-              <CardTitle className="text-sm font-extrabold text-text-primary">Briefing Overview & Focus Tasks</CardTitle>
-              <p className="text-[10px] text-text-muted mt-0.5">
-                {isSimpleMode ? "💡 Simplified Retail Mode" : "📊 Professional Analytics Mode"}
+            <div className="min-w-0 flex-1">
+              <CardTitle className="text-sm font-extrabold text-text-primary leading-snug">Briefing Overview & Focus Tasks</CardTitle>
+              <p className="text-[10px] text-text-muted mt-0.5 truncate">
+                {isSimpleMode ? "Simplified Retail Mode" : "Professional Analytics Mode"}
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-3 flex-shrink-0">
             {/* Audio Reader Controls */}
             {data && (
               <div className="flex items-center gap-1.5 bg-card/60 border border-border/60 rounded-lg p-1">
                 <button
                   onClick={handleToggleSpeech}
                   className={`p-1 rounded text-xs flex items-center gap-1 font-bold transition-all ${
-                    isSpeaking 
-                      ? "text-primary bg-primary/10 hover:bg-primary/20" 
+                    isSpeaking
+                      ? "text-primary bg-primary/10 hover:bg-primary/20"
                       : "text-text-muted hover:text-text-primary hover:bg-white/5"
                   }`}
                   title={isSpeaking ? (isPaused ? "Resume Speech" : "Pause Speech") : "Read Aloud"}
+                  aria-label={isSpeaking ? (isPaused ? "Resume Speech" : "Pause Speech") : "Read Aloud"}
                 >
                   {isSpeaking && !isPaused ? (
                     <>
-                      <Pause className="w-3 h-3 animate-pulse" />
+                      <Pause className="w-3.5 h-3.5 animate-pulse" />
                       <span className="text-[9px] hidden sm:inline">Pause</span>
                     </>
                   ) : (
@@ -187,21 +188,22 @@ export default function ClaudeBriefingCard() {
                     onClick={handleStopSpeech}
                     className="p-1 rounded text-red-400 hover:bg-red-500/10 transition-all"
                     title="Stop Reading"
+                    aria-label="Stop Reading"
                   >
-                    <Square className="w-3 h-3 fill-red-400/20" />
+                    <Square className="w-3.5 h-3.5 fill-red-400/20" />
                   </button>
                 )}
               </div>
             )}
 
-            <span className="text-[10px] px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary font-extrabold uppercase tracking-wider">
+            <span className="hidden sm:inline-block text-[10px] px-2 py-0.5 rounded bg-primary/10 border border-primary/20 text-primary font-extrabold uppercase tracking-wider">
               System
             </span>
 
             <button
               onClick={fetchBriefing}
               disabled={isLoading}
-              className="p-1.5 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
+              className="p-2 rounded-lg text-text-muted hover:text-primary hover:bg-primary/10 transition-colors disabled:opacity-50"
               aria-label="Refresh briefing"
             >
               <RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -231,7 +233,7 @@ export default function ClaudeBriefingCard() {
 
             {/* Bullet Points Grid */}
             {data.bulletPoints.length > 0 && (
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
                 {data.bulletPoints.map((bullet, idx) => (
                   <div 
                     key={idx} 
@@ -271,7 +273,7 @@ export default function ClaudeBriefingCard() {
                 </div>
 
                 {/* Checklist Rows */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-2 mt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 mt-2">
                   {data.checklist.map(item => {
                     const isChecked = !!checkedItems[item.id];
                     return (
@@ -303,7 +305,7 @@ export default function ClaudeBriefingCard() {
 
             {/* Last Updated */}
             {lastUpdated && (
-              <div className="text-[9px] text-text-muted/60 flex items-center justify-between border-t border-border/20 pt-2.5">
+              <div className="text-[9px] text-text-muted/60 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 border-t border-border/20 pt-2.5">
                 <span>Updated today at {lastUpdated.toLocaleTimeString()}</span>
                 <span>Deterministic Analysis Engine</span>
               </div>

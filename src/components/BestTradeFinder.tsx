@@ -206,10 +206,10 @@ export default function BestTradeFinder() {
       <div className="absolute -top-16 -right-16 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-secondary/5 rounded-full blur-3xl pointer-events-none" />
       
-      <CardContent className="p-6 md:p-8">
+      <CardContent className="p-4 sm:p-6 md:p-8">
         {/* Header Indicators */}
         <div className="flex items-center justify-between mb-6 border-b border-border/30 pb-4 gap-3 flex-wrap">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             <Badge className="bg-primary text-primary-foreground font-bold px-2 py-0.5 text-[10px] tracking-wide animate-pulse">
               LIVE SIGNAL
             </Badge>
@@ -222,7 +222,7 @@ export default function BestTradeFinder() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted font-semibold">Signal Strength:</span>
+            <span className="text-xs text-text-muted font-semibold hidden sm:inline">Signal Strength:</span>
             <Badge variant="outline" className={`font-bold text-xs px-2.5 py-0.5 uppercase tracking-wide ${ratingColor}`}>
               {ratingLabel}
             </Badge>
@@ -230,7 +230,7 @@ export default function BestTradeFinder() {
         </div>
 
         {/* Grid Main Info */}
-        <div className="grid md:grid-cols-12 gap-8 items-center">
+        <div className="grid md:grid-cols-12 gap-6 md:gap-8 items-center">
           {/* Circular Score Match (Col-3) */}
           <div className="md:col-span-3 flex flex-col items-center justify-center border-b md:border-b-0 md:border-r border-border/50 pb-6 md:pb-0 md:pr-8">
             <div className="relative w-28 h-28">
@@ -316,57 +316,57 @@ export default function BestTradeFinder() {
             </div>
 
             {/* Trading Levels */}
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-xs text-text-muted block font-semibold mb-1">Buy Entry Price</span>
-                <span className="text-lg font-extrabold text-text-primary">₹{bestTrade.currentPrice.toFixed(2)}</span>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
+              <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Buy Entry Price</span>
+                <span className="text-base sm:text-lg font-extrabold text-text-primary">₹{bestTrade.currentPrice.toFixed(2)}</span>
               </div>
-              <div className="p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-xs text-text-muted block font-semibold mb-1">Target Price</span>
-                <span className="text-lg font-extrabold text-success">₹{bestTrade.target.toFixed(2)}</span>
+              <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Target Price</span>
+                <span className="text-base sm:text-lg font-extrabold text-success">₹{bestTrade.target.toFixed(2)}</span>
               </div>
-              <div className="p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-xs text-text-muted block font-semibold mb-1">Stop Loss</span>
-                <span className="text-lg font-extrabold text-danger">₹{bestTrade.stopLoss.toFixed(2)}</span>
+              <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Stop Loss</span>
+                <span className="text-base sm:text-lg font-extrabold text-danger">₹{bestTrade.stopLoss.toFixed(2)}</span>
               </div>
-              <div className="p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-xs text-text-muted block font-semibold mb-1">Risk / Reward</span>
-                <span className="text-lg font-extrabold text-primary">1 : 2.2</span>
+              <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Risk / Reward</span>
+                <span className="text-base sm:text-lg font-extrabold text-primary">1 : 2.2</span>
               </div>
             </div>
           </div>
         </div>
 
         {/* Action Button & Collapsible Comparison */}
-        <div className="mt-8 pt-6 border-t border-border/50 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="mt-6 sm:mt-8 pt-5 sm:pt-6 border-t border-border/50 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
           {isInWatchlist ? (
-            <Button 
-              disabled 
-              className="bg-secondary/20 text-secondary border border-secondary/30 font-bold px-6 cursor-not-allowed flex items-center gap-2"
+            <Button
+              disabled
+              className="bg-secondary/20 text-secondary border border-secondary/30 font-bold px-6 cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Check className="w-4 h-4" /> Added to Watchlist
             </Button>
           ) : watchlistLoading ? (
-            <Button 
-              disabled 
-              className="bg-primary/50 text-primary-foreground font-bold px-6 flex items-center gap-2"
+            <Button
+              disabled
+              className="bg-primary/50 text-primary-foreground font-bold px-6 flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Loader2 className="w-4 h-4 animate-spin" /> Adding...
             </Button>
           ) : (
-            <Button 
+            <Button
               onClick={handleAddToWatchlist}
-              className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold px-6 shadow-glow flex items-center gap-2"
+              className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold px-6 shadow-glow flex items-center justify-center gap-2 w-full sm:w-auto"
             >
               <Plus className="w-4 h-4" /> Add to Watchlist
             </Button>
           )}
 
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="sm"
             onClick={() => setShowAllCompared(!showAllCompared)}
-            className="text-text-muted hover:text-text-primary font-bold"
+            className="text-text-muted hover:text-text-primary font-bold w-full sm:w-auto"
           >
             {showAllCompared ? "Hide comparisons" : `Compare all ${allCompared.length} stocks`}
             {showAllCompared ? <ChevronUp className="w-4 h-4 ml-1.5" /> : <ChevronDown className="w-4 h-4 ml-1.5" />}

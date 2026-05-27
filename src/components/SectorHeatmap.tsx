@@ -203,33 +203,34 @@ export default function SectorHeatmap() {
         if (!sectorData) return null;
 
         return (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/70 backdrop-blur-sm animate-in fade-in duration-200">
             {/* Backdrop click to close */}
             <div className="absolute inset-0" onClick={() => setSelectedSector(null)} />
 
             {/* Modal Content Box */}
-            <div className="relative w-full max-w-4xl bg-surface border border-border/80 rounded-2xl shadow-2xl p-6 overflow-hidden max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 z-10">
-              
+            <div className="relative w-full max-w-4xl bg-surface border border-border/80 rounded-t-2xl sm:rounded-2xl shadow-2xl p-4 sm:p-6 overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col animate-in zoom-in-95 duration-200 z-10">
+
               {/* Close Button */}
               <button
                 onClick={() => setSelectedSector(null)}
-                className="absolute top-4 right-4 p-1.5 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-all"
+                className="absolute top-3 right-3 sm:top-4 sm:right-4 p-2 rounded-lg text-text-muted hover:text-text-primary hover:bg-white/5 transition-all tap-target flex items-center justify-center"
                 title="Close Overview"
+                aria-label="Close"
               >
                 <X className="w-5 h-5" />
               </button>
 
               {/* Header */}
               <div className="mb-4 pr-10">
-                <div className="flex items-center gap-2 mb-1">
+                <div className="flex items-center gap-2 mb-1 flex-wrap">
                   <span className="text-[10px] uppercase tracking-wider text-primary font-extrabold">Sector Snapshot</span>
-                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-text-muted">
+                  <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-white/5 border border-white/10 text-text-muted whitespace-nowrap">
                     {analysisDays}D Performance Timeframe
                   </span>
                 </div>
-                <h3 className="text-xl font-bold text-text-primary flex items-baseline gap-2">
+                <h3 className="text-base sm:text-xl font-bold text-text-primary flex items-baseline gap-2 flex-wrap">
                   {sectorData.sector} Sector Overview
-                  <span className={`text-base font-extrabold ${
+                  <span className={`text-sm sm:text-base font-extrabold ${
                     sectorData.avgChange >= 0.2 ? "text-green-400" : sectorData.avgChange <= -0.2 ? "text-red-400" : "text-text-primary"
                   }`}>
                     {sectorData.avgChange >= 0 ? "+" : ""}{sectorData.avgChange.toFixed(2)}%
@@ -241,10 +242,10 @@ export default function SectorHeatmap() {
               </div>
 
               {/* Two Column Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden flex-1 py-2">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 overflow-y-auto md:overflow-hidden flex-1 py-2 custom-scrollbar">
                 
                 {/* Gainers Column (Up) */}
-                <div className="flex flex-col h-full overflow-hidden">
+                <div className="flex flex-col md:h-full md:overflow-hidden">
                   <div className="flex items-center justify-between pb-2 border-b border-border/60 mb-2">
                     <span className="text-xs font-bold text-green-400 flex items-center gap-1.5">
                       <TrendingUp className="w-4 h-4" /> Up Stocks ({sectorData.upStocks?.length || 0})
@@ -252,19 +253,19 @@ export default function SectorHeatmap() {
                   </div>
 
                   {sectorData.upStocks && sectorData.upStocks.length > 0 ? (
-                    <div className="space-y-1.5 overflow-y-auto pr-1.5 flex-1 scrollbar-thin max-h-[48vh]">
+                    <div className="space-y-1.5 md:overflow-y-auto md:pr-1.5 md:flex-1 md:custom-scrollbar md:max-h-[48vh]">
                       {sectorData.upStocks.map((stock) => (
                         <Link
                           href={`/dashboard/analysis?symbol=${stock.symbol}`}
                           key={stock.symbol}
-                          className="flex items-center justify-between p-2.5 rounded-xl bg-surface/50 border border-border/40 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 group/stock cursor-pointer"
+                          className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-surface/50 border border-border/40 hover:border-primary/30 hover:bg-primary/5 active:bg-primary/10 transition-all duration-200 group/stock cursor-pointer"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-text-primary uppercase truncate leading-none">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold text-text-primary uppercase leading-none break-all">
                                 {stock.symbol.split(".")[0].split(":")[0]}
                               </span>
-                              <span className="text-[8px] px-1.5 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded font-semibold">
+                              <span className="text-[8px] px-1.5 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded font-semibold whitespace-nowrap">
                                 {stock.score} score
                               </span>
                             </div>
@@ -272,11 +273,11 @@ export default function SectorHeatmap() {
                               {stock.shortName || "Unknown Stock"}
                             </p>
                           </div>
-                          <div className="text-right ml-3 flex-shrink-0 flex items-center gap-3">
-                            <span className="text-xs text-text-muted font-medium">
+                          <div className="text-right flex-shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3">
+                            <span className="text-[10px] sm:text-xs text-text-muted font-medium whitespace-nowrap">
                               ₹{stock.price ? stock.price.toFixed(2) : "0.00"}
                             </span>
-                            <span className="text-xs font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded min-w-[60px] text-center group-hover/stock:hidden">
+                            <span className="text-[11px] sm:text-xs font-bold text-green-400 bg-green-500/10 px-2 py-0.5 rounded min-w-[56px] sm:min-w-[60px] text-center group-hover/stock:hidden whitespace-nowrap">
                               {formatPercent(stock.change)}
                             </span>
                             <span className="text-[9px] px-2 py-1 bg-primary text-primary-foreground rounded-lg font-bold hidden group-hover/stock:flex items-center gap-1 shadow-md animate-in fade-in duration-200">
@@ -294,7 +295,7 @@ export default function SectorHeatmap() {
                 </div>
 
                 {/* Losers Column (Down) */}
-                <div className="flex flex-col h-full overflow-hidden">
+                <div className="flex flex-col md:h-full md:overflow-hidden">
                   <div className="flex items-center justify-between pb-2 border-b border-border/60 mb-2">
                     <span className="text-xs font-bold text-red-400 flex items-center gap-1.5">
                       <TrendingDown className="w-4 h-4" /> Down Stocks ({sectorData.downStocks?.length || 0})
@@ -302,19 +303,19 @@ export default function SectorHeatmap() {
                   </div>
 
                   {sectorData.downStocks && sectorData.downStocks.length > 0 ? (
-                    <div className="space-y-1.5 overflow-y-auto pr-1.5 flex-1 scrollbar-thin max-h-[48vh]">
+                    <div className="space-y-1.5 md:overflow-y-auto md:pr-1.5 md:flex-1 md:custom-scrollbar md:max-h-[48vh]">
                       {sectorData.downStocks.map((stock) => (
                         <Link
                           href={`/dashboard/analysis?symbol=${stock.symbol}`}
                           key={stock.symbol}
-                          className="flex items-center justify-between p-2.5 rounded-xl bg-surface/50 border border-border/40 hover:border-primary/30 hover:bg-primary/5 transition-all duration-200 group/stock cursor-pointer"
+                          className="flex items-center justify-between gap-2 p-2.5 rounded-xl bg-surface/50 border border-border/40 hover:border-primary/30 hover:bg-primary/5 active:bg-primary/10 transition-all duration-200 group/stock cursor-pointer"
                         >
                           <div className="min-w-0 flex-1">
-                            <div className="flex items-center gap-1.5">
-                              <span className="text-xs font-bold text-text-primary uppercase truncate leading-none">
+                            <div className="flex items-center gap-1.5 flex-wrap">
+                              <span className="text-xs font-bold text-text-primary uppercase leading-none break-all">
                                 {stock.symbol.split(".")[0].split(":")[0]}
                               </span>
-                              <span className="text-[8px] px-1.5 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded font-semibold">
+                              <span className="text-[8px] px-1.5 py-0.5 bg-primary/10 border border-primary/20 text-primary rounded font-semibold whitespace-nowrap">
                                 {stock.score} score
                               </span>
                             </div>
@@ -322,11 +323,11 @@ export default function SectorHeatmap() {
                               {stock.shortName || "Unknown Stock"}
                             </p>
                           </div>
-                          <div className="text-right ml-3 flex-shrink-0 flex items-center gap-3">
-                            <span className="text-xs text-text-muted font-medium">
+                          <div className="text-right flex-shrink-0 flex flex-col sm:flex-row items-end sm:items-center gap-1 sm:gap-3">
+                            <span className="text-[10px] sm:text-xs text-text-muted font-medium whitespace-nowrap">
                               ₹{stock.price ? stock.price.toFixed(2) : "0.00"}
                             </span>
-                            <span className="text-xs font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded min-w-[60px] text-center group-hover/stock:hidden">
+                            <span className="text-[11px] sm:text-xs font-bold text-red-400 bg-red-500/10 px-2 py-0.5 rounded min-w-[56px] sm:min-w-[60px] text-center group-hover/stock:hidden whitespace-nowrap">
                               {formatPercent(stock.change)}
                             </span>
                             <span className="text-[9px] px-2 py-1 bg-primary text-primary-foreground rounded-lg font-bold hidden group-hover/stock:flex items-center gap-1 shadow-md animate-in fade-in duration-200">

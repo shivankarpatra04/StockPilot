@@ -175,22 +175,22 @@ export default function BuySellZones() {
       </div>
       
       <Card className="border border-border bg-surface shadow-sm">
-        <CardContent className="p-6">
+        <CardContent className="p-4 sm:p-6">
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-            <div className="flex-1">
+            <div className="flex-1 min-w-0">
               <label className="text-sm font-medium text-text-muted mb-1.5 block">Selected Asset</label>
-              <div className="flex gap-2">
-                <Input 
+              <div className="flex flex-col sm:flex-row gap-2">
+                <Input
                   value={symbol}
                   onChange={(e) => setSymbol(e.target.value)}
                   placeholder="e.g. RELIANCE:NSE or TCS:NSE"
-                  className="bg-background border-border max-w-xs uppercase"
+                  className="bg-background border-border sm:max-w-xs uppercase"
                   disabled={isLoading}
                 />
-                <Button 
-                  onClick={() => handleAnalyze()} 
+                <Button
+                  onClick={() => handleAnalyze()}
                   disabled={isLoading || !symbol.trim()}
-                  className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[120px]"
+                  className="bg-primary text-primary-foreground hover:bg-primary/90 min-w-[120px] w-full sm:w-auto"
                 >
                   {isLoading ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Target className="w-4 h-4 mr-2" />}
                   {isLoading ? "Analyzing..." : "Analysis"}
@@ -201,7 +201,7 @@ export default function BuySellZones() {
 
           {/* Sticky Section Nav */}
           {result && !isSimpleMode && (
-            <div className="sticky top-0 z-20 -mx-6 px-6 bg-surface/95 backdrop-blur-sm border-b border-border mb-6">
+            <div className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 bg-surface/95 backdrop-blur-sm border-b border-border mb-6">
               <div className="flex items-center gap-6 overflow-x-auto scrollbar-hide h-10">
                 {navLinks.map((link) => (
                   <button
@@ -304,7 +304,7 @@ export default function BuySellZones() {
                 </h3>
               </div>
               
-              <div className="grid md:grid-cols-2 gap-8 items-center">
+              <div className="grid md:grid-cols-2 gap-6 md:gap-8 items-center">
                 <div className="space-y-5">
                   {/* Profit Bar */}
                   <div className="space-y-1.5">

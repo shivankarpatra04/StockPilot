@@ -26,7 +26,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
-    // Most-recent scan timestamp â€” shared between Best Trade and Opportunities
+    // Most-recent scan timestamp — shared between Best Trade and Opportunities
     // so the user can verify they're looking at the same snapshot.
     const dataAsOf = cachedStocks.reduce<number>((max, s) => {
       const t = new Date(s.lastUpdated).getTime();
@@ -72,14 +72,14 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     // for at least one category, then take the highest scoring one.
     const opportunityPool = tagged.filter((s) => s.categories.length > 0);
 
-    // Fallback: if nothing qualifies (rare â€” early after a fresh scan), pick
+    // Fallback: if nothing qualifies (rare — early after a fresh scan), pick
     // from the full enriched list so the card never goes empty.
     const candidatePool = opportunityPool.length > 0 ? opportunityPool : tagged;
     candidatePool.sort((a, b) => b.score - a.score);
     const best = candidatePool[0];
 
     // Now scan ALL timeframes for the chosen stock so we can tell the user
-    // "Also appears in Swing Setup Â· 90D" even when their current view is 30D.
+    // "Also appears in Swing Setup · 90D" even when their current view is 30D.
     const bestRow = cachedStocks.find((s) => s.symbol === best.symbol);
     const bestAnalysisAll = (bestRow?.analysisData as any) ?? {};
 
@@ -136,7 +136,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       enrichedCategories.push(chosen);
     });
 
-    // Sort: user's current timeframe first, then by category order swingâ†’earningsâ†’catchupâ†’breakouts.
+    // Sort: user's current timeframe first, then by category order swing→earnings→catchup→breakouts.
     const order: CategoryId[] = ["swing", "earnings", "catchup", "breakouts"];
     enrichedCategories.sort((a, b) => {
       const aExact = a.days === days ? 0 : 1;

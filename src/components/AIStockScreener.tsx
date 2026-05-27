@@ -202,15 +202,15 @@ export default function AIStockScreener() {
           ) : null
         }
         action={
-          <div className="flex items-center gap-2 flex-wrap justify-end">
-            <div className="relative">
+          <div className="flex items-center gap-2 flex-wrap justify-end w-full sm:w-auto">
+            <div className="relative flex-1 sm:flex-none min-w-[140px]">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-text-muted" />
               <input
                 type="text"
                 placeholder="Search ticker or name…"
                 value={search}
                 onChange={e => setSearch(e.target.value)}
-                className="pl-8 pr-3 py-1.5 text-xs rounded-lg bg-surface border border-border text-text-primary placeholder-text-muted focus:outline-none focus:border-primary/50 w-48 transition-all duration-300 focus:w-64"
+                className="pl-8 pr-3 py-1.5 text-xs rounded-lg bg-surface border border-border text-text-primary placeholder-text-muted focus:outline-none focus:border-primary/50 w-full sm:w-48 transition-all duration-300 sm:focus:w-64"
               />
             </div>
 

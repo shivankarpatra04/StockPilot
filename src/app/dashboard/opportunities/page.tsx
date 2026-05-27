@@ -203,20 +203,20 @@ function OpportunitiesContent() {
         <div className="absolute -bottom-10 -right-10 w-64 h-64 rounded-full bg-emerald-500/6 blur-3xl pointer-events-none" />
         <div className="absolute top-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-violet-500/40 to-transparent" />
 
-        <div className="relative px-6 py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
-          <div className="space-y-1.5">
+        <div className="relative px-4 sm:px-6 py-5 sm:py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-5">
+          <div className="space-y-1.5 min-w-0">
             <div className="flex items-center gap-2">
-              <div className="w-7 h-7 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center">
+              <div className="w-7 h-7 rounded-lg bg-violet-500/15 border border-violet-500/25 flex items-center justify-center shrink-0">
                 <Sparkles className="w-3.5 h-3.5 text-violet-400" />
               </div>
               <span className="text-[10px] font-black uppercase tracking-[0.25em] text-violet-400">
                 AI Market Intelligence
               </span>
             </div>
-            <h1 className="text-2xl md:text-3xl font-black text-white tracking-tight">
+            <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
               {isSimpleMode ? "Find Your Next Trade" : "Market Opportunities"}
             </h1>
-            <p className="text-sm text-slate-400 max-w-md">
+            <p className="text-xs sm:text-sm text-slate-400 max-w-md">
               {isSimpleMode
                 ? "Curated, ready-to-act trade ideas — no research needed."
                 : "Four distinct playbooks surfaced by systematic momentum analysis."}
@@ -224,7 +224,7 @@ function OpportunitiesContent() {
           </div>
 
           {/* Live stats strip */}
-          <div className="flex items-center gap-3 shrink-0 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-3 sm:shrink-0 flex-wrap">
             <TimeframeSelector
               value={analysisDays}
               onChange={handleTimeframeChange}
@@ -239,7 +239,7 @@ function OpportunitiesContent() {
         </div>
 
         {/* Tab Navigation — mounted inside the header card */}
-        <div className="relative border-t border-border/40 px-6 pb-0">
+        <div className="relative border-t border-border/40 px-2 sm:px-6 pb-0">
           <div className="flex items-end gap-0 overflow-x-auto scrollbar-hide -mb-px">
             {TABS.map((tab) => {
               const isActive = activeTab === tab.id;

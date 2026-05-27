@@ -133,13 +133,13 @@ export default function SectorCatchUpTrades({ analysisDays, isSimpleMode, dynami
       {/* Table */}
       <div className="rounded-xl border border-border/50 overflow-hidden">
         {/* Column headers */}
-        <div className="grid grid-cols-12 gap-2 px-5 py-3 bg-[#0E0E18] border-b border-border/40">
-          <div className="col-span-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">Stock</div>
+        <div className="grid grid-cols-12 gap-2 px-3 sm:px-5 py-3 bg-[#0E0E18] border-b border-border/40">
+          <div className="col-span-7 sm:col-span-4 text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">Stock</div>
           <div className="col-span-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-600 hidden sm:block">Sector</div>
           <div className="col-span-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-600 hidden md:block">Sector Perf</div>
           <div className="col-span-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-600 hidden md:block">Stock Perf</div>
           <div className="col-span-3 sm:col-span-2 text-[10px] font-black uppercase tracking-[0.15em] text-slate-600">Probability</div>
-          <div className="col-span-1" />
+          <div className="col-span-2 sm:col-span-1" />
         </div>
 
         {filteredTrades.length > 0 ? (
@@ -159,7 +159,7 @@ export default function SectorCatchUpTrades({ analysisDays, isSimpleMode, dynami
                   isTopPick ? "bg-primary/8 ring-2 ring-primary/30 ring-inset" : isExpanded ? "bg-sky-500/4" : "hover:bg-white/2"
                 )}>
                   {isTopPick && (
-                    <div className="px-5 py-2 bg-primary/10 border-b border-primary/20 flex items-center gap-2">
+                    <div className="px-3 sm:px-5 py-2 bg-primary/10 border-b border-primary/20 flex items-center gap-2">
                       <span className="text-base">⭐</span>
                       <span className="text-[10px] font-black uppercase tracking-widest text-primary">
                         #1 Pick — Today's Best Trade Recommendation
@@ -168,16 +168,16 @@ export default function SectorCatchUpTrades({ analysisDays, isSimpleMode, dynami
                   )}
                   <button
                     onClick={() => setExpandedRow(isExpanded ? null : key)}
-                    className="w-full grid grid-cols-12 gap-2 px-5 py-4 items-center text-left"
+                    className="w-full grid grid-cols-12 gap-2 px-3 sm:px-5 py-4 items-center text-left"
                   >
                     {/* Stock identity */}
-                    <div className="col-span-4 flex items-center gap-3 min-w-0">
+                    <div className="col-span-7 sm:col-span-4 flex items-center gap-2 sm:gap-3 min-w-0">
                       <div className="w-9 h-9 rounded-lg flex items-center justify-center font-black text-[10px] shrink-0 border bg-sky-500/10 text-sky-400 border-sky-500/20">
                         {ticker.slice(0, 3) || <Layers className="w-4 h-4" />}
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="font-bold text-white text-sm truncate">{ticker || trade.sector}</p>
-                        <p className="text-[10px] text-slate-600 truncate hidden sm:block">{trade.stockName}</p>
+                        <p className="text-[10px] text-slate-600 truncate">{trade.stockName}</p>
                       </div>
                     </div>
 
@@ -212,14 +212,14 @@ export default function SectorCatchUpTrades({ analysisDays, isSimpleMode, dynami
                     </div>
 
                     {/* Expand */}
-                    <div className="col-span-1 flex justify-end">
+                    <div className="col-span-2 sm:col-span-1 flex justify-end">
                       <ChevronRight className={cn("w-4 h-4 text-slate-600 transition-transform duration-300 group-hover:text-slate-400", isExpanded && "rotate-90 text-sky-400")} />
                     </div>
                   </button>
 
                   {/* Expanded detail */}
                   {isExpanded && (
-                    <div className="px-5 pb-5 pt-2 border-t border-border/30 bg-[#0D0D1A]">
+                    <div className="px-3 sm:px-5 pb-5 pt-2 border-t border-border/30 bg-[#0D0D1A]">
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                         {/* AI Reasoning */}
                         <div className="md:col-span-2 rounded-xl border border-sky-500/15 bg-sky-500/5 p-4">

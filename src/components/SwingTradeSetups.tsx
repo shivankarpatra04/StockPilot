@@ -166,7 +166,7 @@ export default function SwingTradeSetups({ analysisDays, isSimpleMode, dynamicDa
                   )}
                 >
                   {isTopPick && (
-                    <div className="px-5 py-2 bg-primary/10 border-b border-primary/20 flex items-center gap-2">
+                    <div className="px-3 sm:px-5 py-2 bg-primary/10 border-b border-primary/20 flex items-center gap-2">
                       <span className="text-base">⭐</span>
                       <span className="text-[10px] font-black uppercase tracking-widest text-primary">
                         #1 Pick — Today's Best Trade Recommendation
@@ -178,9 +178,9 @@ export default function SwingTradeSetups({ analysisDays, isSimpleMode, dynamicDa
                     onClick={() => setExpandedRow(isExpanded ? null : trade.symbol)}
                     className="w-full text-left"
                   >
-                    <div className="px-5 py-4">
+                    <div className="px-3 sm:px-5 py-4">
                       <div className="flex items-start justify-between gap-3 mb-4">
-                        <div className="flex items-center gap-3">
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
                           <div className={cn(
                             "w-10 h-10 rounded-xl flex items-center justify-center font-black text-[11px] border shrink-0",
                             isLong
@@ -189,11 +189,11 @@ export default function SwingTradeSetups({ analysisDays, isSimpleMode, dynamicDa
                           )}>
                             {ticker.slice(0, 3)}
                           </div>
-                          <div>
-                            <div className="flex items-center gap-2">
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-center gap-2 flex-wrap">
                               <p className="font-black text-white text-base tracking-tight">{ticker}</p>
                               <span className={cn(
-                                "text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider border",
+                                "text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider border whitespace-nowrap",
                                 isLong
                                   ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
                                   : "bg-red-500/10 text-red-400 border-red-500/20"
@@ -201,7 +201,7 @@ export default function SwingTradeSetups({ analysisDays, isSimpleMode, dynamicDa
                                 {isLong ? "↑ LONG" : "↓ SHORT"}
                               </span>
                             </div>
-                            <p className="text-[11px] text-slate-600">{trade.name}</p>
+                            <p className="text-[11px] text-slate-600 truncate">{trade.name}</p>
                           </div>
                         </div>
 
@@ -254,7 +254,7 @@ export default function SwingTradeSetups({ analysisDays, isSimpleMode, dynamicDa
 
                   {/* Expanded detail */}
                   {isExpanded && (
-                    <div className="px-5 pb-5 border-t border-border/30 pt-4 space-y-3 bg-[#0D0D1A]">
+                    <div className="px-3 sm:px-5 pb-5 border-t border-border/30 pt-4 space-y-3 bg-[#0D0D1A]">
                       <div className={cn(
                         "rounded-xl border p-4",
                         isLong ? "border-emerald-500/15 bg-emerald-500/5" : "border-red-500/15 bg-red-500/5"

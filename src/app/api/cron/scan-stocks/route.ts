@@ -54,10 +54,10 @@ function calculateBuyScore(candles: any[], symbol: string) {
   const score = Math.round(rsiScore * 0.4 + supportScore * 0.3 + trendScore * 0.3);
 
   let reasoning = "";
-  if (score >= 75) reasoning = `Excellent buy opportunity. RSI is oversold at ${rsi.toFixed(0)}, near strong support at â‚¹${minPrice.toFixed(2)}.`;
-  else if (score >= 60) reasoning = `Solid upward momentum, trading above 20-day average of â‚¹${sma20.toFixed(2)}.`;
-  else if (score >= 45) reasoning = `Moving sideways in neutral range between â‚¹${minPrice.toFixed(2)} and â‚¹${maxPrice.toFixed(2)}.`;
-  else reasoning = `Overbought with RSI at ${rsi.toFixed(0)}. High pullback risk near resistance â‚¹${maxPrice.toFixed(2)}.`;
+  if (score >= 75) reasoning = `Excellent buy opportunity. RSI is oversold at ${rsi.toFixed(0)}, near strong support at ₹${minPrice.toFixed(2)}.`;
+  else if (score >= 60) reasoning = `Solid upward momentum, trading above 20-day average of ₹${sma20.toFixed(2)}.`;
+  else if (score >= 45) reasoning = `Moving sideways in neutral range between ₹${minPrice.toFixed(2)} and ₹${maxPrice.toFixed(2)}.`;
+  else reasoning = `Overbought with RSI at ${rsi.toFixed(0)}. High pullback risk near resistance ₹${maxPrice.toFixed(2)}.`;
 
   return {
     score: Math.max(0, Math.min(100, score)),
