@@ -6,7 +6,16 @@ import { fetchStockData } from "@/lib/stocks";
 
 export const maxDuration = 300; // fetches live candles per active signal; needs a long timeout (Vercel Pro)
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Optional protection: if CRON_SECRET is set, require a matching bearer token.
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const auth = request.headers.get("authorization");
+    if (auth !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   try {
     // Validate all ACTIVE signals against real price candles.
     const activeSignals = await prisma.tradingSignal.findMany({

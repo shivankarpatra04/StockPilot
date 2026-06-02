@@ -9,7 +9,16 @@ import { calculateBuyScore } from "@/lib/score";
 
 const TIMEFRAMES = [1, 7, 15, 30, 60, 90];
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Optional protection: if CRON_SECRET is set, require a matching bearer token.
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const auth = request.headers.get("authorization");
+    if (auth !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const total = STOCK_UNIVERSE.length;
   console.log(`[CRON] Starting Nifty500 scan for ${total} stocks...`);
   const results: string[] = [];

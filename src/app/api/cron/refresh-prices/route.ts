@@ -28,6 +28,15 @@ async function runPooled<T>(items: T[], limit: number, worker: (item: T) => Prom
 // that runs once daily via /api/cron/scan-stocks. Designed to run every ~15 min
 // during market hours without hammering Yahoo (uses batched quote calls).
 export async function GET(request: Request) {
+  // Optional protection: if CRON_SECRET is set, require a matching bearer token.
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const auth = request.headers.get("authorization");
+    if (auth !== `Bearer ${secret}`) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   try {
     const t0 = Date.now();
     const limitParam = new URL(request.url).searchParams.get("limit");
