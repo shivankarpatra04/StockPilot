@@ -151,7 +151,7 @@ function OpportunitiesContent() {
     async function fetchOpps() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/opportunities?days=${analysisDays}`);
+        const res = await fetch(`/api/opportunities?days=${analysisDays}&mode=${isSimpleMode ? "simple" : "expert"}`);
         if (res.ok) setData(await res.json());
       } catch (e) {
         console.error("Failed to fetch dynamic opportunities", e);
@@ -160,7 +160,7 @@ function OpportunitiesContent() {
       }
     }
     fetchOpps();
-  }, [analysisDays]);
+  }, [analysisDays, isSimpleMode]);
 
   // Fetch the #1 pick for the current timeframe (same API the dashboard uses)
   // so the ⭐ banner follows the timeframe when the lock is dropped.
@@ -214,12 +214,12 @@ function OpportunitiesContent() {
               </span>
             </div>
             <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
-              {isSimpleMode ? "Find Your Next Trade" : "Market Opportunities"}
+              {isSimpleMode ? "Apna agla trade dhoondho 🔍" : "Market Opportunities"}
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 max-w-md">
               {isSimpleMode
-                ? "Curated, ready-to-act trade ideas — no research needed."
-                : "Four distinct playbooks surfaced by systematic momentum analysis."}
+                ? "Chuni hui, ready trade ideas 💡 — khud research karne ki zaroorat nahi."
+                : "Four ready-made trade idea lists, picked by tracking which stocks have momentum."}
             </p>
           </div>
 

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { cn } from "@/lib/utils";
 
 import GlobalAnalysisSelector from "./GlobalAnalysisSelector";
+import NotificationBell from "./NotificationBell";
 
 export default function DashboardNavbar() {
   const { toggleSidebar, sidebarOpen } = useAppStore();
@@ -43,6 +44,7 @@ export default function DashboardNavbar() {
       </div>
 
       <div className="flex items-center gap-2 shrink-0">
+        <NotificationBell />
         {session?.user && (
           <div className="flex items-center gap-2 px-2 md:px-3 py-1.5 rounded-full bg-card border border-border shadow-sm">
             <User className="w-3.5 h-3.5 text-primary flex-shrink-0" />

@@ -251,7 +251,7 @@ export default function EarningsCatalystPlays({ analysisDays, isSimpleMode, dyna
                         <div className="md:col-span-2 rounded-xl border border-amber-500/15 bg-amber-500/5 p-4">
                           <div className="flex items-center gap-2 mb-3">
                             <Brain className="w-4 h-4 text-amber-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">AI Analysis</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-amber-400">{isSimpleMode ? "AI ki salah 🧠" : "AI Analysis"}</span>
                           </div>
                           <p className="text-sm text-slate-400 leading-relaxed italic">{stock.verdict}</p>
                         </div>

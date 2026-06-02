@@ -2,12 +2,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isMode, type Mode } from "@/lib/lang";
 
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const days = searchParams.get("days") || "30";
     const daysNum = parseInt(days, 10) || 30;
+    const mode: Mode = isMode(searchParams.get("mode")) ? (searchParams.get("mode") as Mode) : "expert";
 
     const stocks = await prisma.scannedStock.findMany({
       select: {
@@ -116,18 +118,29 @@ export async function GET(request: NextRequest) {
       .filter(s => s.analysis.score >= 65 || s.analysis.score <= 35 || s.analysis.rsi > 70)
       .map(s => {
         const isLong = s.analysis.score >= 50;
-        const entryMin = s.price * 0.99;
-        const entryMax = s.price * 1.01;
-        const stopLoss = isLong ? s.analysis.stopLoss : +(s.price * 1.04).toFixed(2);
-        const target1 = isLong ? s.analysis.target : +(s.price * 0.95).toFixed(2);
-        const target2 = isLong ? +(s.analysis.target * 1.05).toFixed(2) : +(s.price * 0.90).toFixed(2);
-        
-        const risk = Math.abs(s.price - stopLoss);
-        const reward = Math.abs(target1 - s.price);
-        const rrRatio = risk > 0 ? (reward / risk).toFixed(1) : "2.2";
+        // The signal entry is anchored to the lower edge of the band (what gets
+        // saved to the ledger), so stop/target are derived from the same number.
+        const entryMin = +(s.price * 0.99).toFixed(2);
+        const entryMax = +(s.price * 1.01).toFixed(2);
+        const entryRef = entryMin;
 
-        const hash = s.symbol.split(":")[0].split("").reduce((acc: number, c: string) => acc + c.charCodeAt(0), 0);
-        const expiryDays = (hash % 85) + 3; // dynamic stable expiry 3-88 days
+        // Realistic swing levels: 5% risk, 10% / 15% reward (1:2 and 1:3 R:R).
+        const STOP_PCT = 0.05;
+        const stopLoss = isLong
+          ? +(entryRef * (1 - STOP_PCT)).toFixed(2)
+          : +(entryRef * (1 + STOP_PCT)).toFixed(2);
+        const target1 = isLong
+          ? +(entryRef * (1 + STOP_PCT * 2)).toFixed(2)
+          : +(entryRef * (1 - STOP_PCT * 2)).toFixed(2);
+        const target2 = isLong
+          ? +(entryRef * (1 + STOP_PCT * 3)).toFixed(2)
+          : +(entryRef * (1 - STOP_PCT * 3)).toFixed(2);
+
+        const risk = Math.abs(entryRef - stopLoss);
+        const reward = Math.abs(target1 - entryRef);
+        const rrRatio = risk > 0 ? (reward / risk).toFixed(1) : "2.0";
+
+        const expiryDays = 15; // fixed swing window (~3 trading weeks)
 
         return {
           symbol: s.symbol,
@@ -364,15 +377,62 @@ export async function GET(request: NextRequest) {
       console.error("Failed to log new signals to ledger:", e);
     }
 
+    // ---- Voice-aware DISPLAY reasoning -------------------------------------
+    // The ledger above was already saved with the original English text. From
+    // here we only transform what the client sees, based on the chosen voice
+    // (expert = plain English with jargon explained, simple = Hinglish + emoji).
+    const simple = mode === "simple";
+    const pctStr = (n: number) => `${n >= 0 ? "+" : ""}${n.toFixed(1)}%`;
+    const cheapHot = (rsi: number) => (rsi < 40 ? "sasta (thanda ❄️)" : rsi > 70 ? "mehenga (garam 🔥)" : "theek-thaak");
+
+    const dStrongBuys = strongBuys.map((o) => ({ ...o, reasoning: simple
+      ? `Strong buy 🚀 Score ${o.score}/100, aur RSI ${o.rsi} matlab stock ${cheapHot(o.rsi)}. ₹${o.support} ke support ke paas hai 🛡️`
+      : `Strong buy. Health score ${o.score}/100 with RSI ${o.rsi} (a 0–100 meter; under 30 = cheap/oversold), near support ₹${o.support} (a level where it tends to stop falling).` }));
+
+    const dOversold = oversold.map((o) => ({ ...o, reasoning: simple
+      ? `Bahut gir chuka hai 📉 RSI sirf ${o.rsi} (kaafi sasta ❄️). ₹${o.support} se wapas upar aa sakta hai 🔄`
+      : `Heavily beaten down — RSI is just ${o.rsi} (a 0–100 meter; under 30 means oversold/cheap). It could bounce back from support at ₹${o.support}.` }));
+
+    const dMomentum = momentum.map((o) => ({ ...o, reasoning: simple
+      ? `${pctStr(o.change)} upar 📈 aur apne average se upar chal raha hai. Trend abhi mazboot hai 💪`
+      : `Up ${pctStr(o.change)} and trading above its recent average, so the upward trend is still intact.` }));
+
+    const dHiddenGems = hiddenGems.map((o) => ({ ...o, reasoning: simple
+      ? `Chhupa hua heera 💎 Nifty 50 se bahar, par score ${o.score}/100 aur RSI ${o.rsi} (${cheapHot(o.rsi)}).`
+      : `A lesser-known pick outside the Nifty 50, but with a strong health score of ${o.score}/100 and RSI ${o.rsi} (a 0–100 meter; lower = cheaper).` }));
+
+    const dSwingTrades = swingTrades.map((o) => ({ ...o, trigger: simple
+      ? `${o.direction === "LONG" ? "Upar jaane" : "Neeche jaane"} ka setup, bharosa ${o.confidence}%. Risk vs faayda ${o.riskReward} ⚖️`
+      : `${o.direction === "LONG" ? "Bullish (upward)" : "Bearish (downward)"} swing setup with ${o.confidence}% confidence and a ${o.riskReward} risk-to-reward.` }));
+
+    const dSectorTrades = sectorTrades.map((o) => {
+      const gap = o.sectorPerformanceValue - o.stockPerformanceValue;
+      return { ...o, reasoning: simple
+        ? `${o.stockName} apne sector se ${gap.toFixed(1)}% peeche hai 🐢. Sector ${pctStr(o.sectorPerformanceValue)} chal raha hai — ye catch-up kar sakta hai 🏃`
+        : `${o.stockName} is lagging its sector by ${gap.toFixed(1)}%. The sector is up ${pctStr(o.sectorPerformanceValue)} on average, so this stock may catch up.` };
+    });
+
+    const dEarningsPlays = earningsPlays.map((o) => ({ ...o, verdict: simple
+      ? `${o.name} ke results ${o.daysToEarnings} din me 📅. ${o.sentiment === "Beat Likely" ? "Acche result ki ummeed 👍" : o.sentiment === "Miss Risk" ? "Result kamzor reh sakta hai ⚠️" : "Result mila-jula reh sakta hai 🤷"}`
+      : `${o.name} reports earnings in ${o.daysToEarnings} days. ${o.sentiment === "Beat Likely" ? "The charts suggest a good result is likely." : o.sentiment === "Miss Risk" ? "The charts hint the result could disappoint." : "The signal is mixed before results."}` }));
+
+    const dBreakoutPlays = breakoutPlays.map((o) => ({ ...o, reasoning: simple
+      ? (o.breakoutType === "CLEARED"
+          ? `${o.name} ne ₹${o.resistance} ka roof tod diya 🚀 (${o.volumeSurge}x zyada trading). Aage badhne ka chance.`
+          : `${o.name} ₹${o.resistance} ke roof se sirf ${o.percentString}% neeche hai 🔜. Tootne wala lag raha hai.`)
+      : (o.breakoutType === "CLEARED"
+          ? `${o.name} broke above its ceiling at ₹${o.resistance} (a price it struggled to cross) on ${o.volumeSurge}x normal volume — a sign it may keep rising.`
+          : `${o.name} is just ${o.percentString}% below its ceiling at ₹${o.resistance}. Rising volume suggests a breakout could be near.`) }));
+
     return NextResponse.json({
-      strongBuys,
-      oversold,
-      momentum,
-      hiddenGems,
-      swingTrades,
-      sectorTrades,
-      earningsPlays,
-      breakoutPlays,
+      strongBuys: dStrongBuys,
+      oversold: dOversold,
+      momentum: dMomentum,
+      hiddenGems: dHiddenGems,
+      swingTrades: dSwingTrades,
+      sectorTrades: dSectorTrades,
+      earningsPlays: dEarningsPlays,
+      breakoutPlays: dBreakoutPlays,
       activeSwings,
       activeBreakouts,
       activeEarnings,
@@ -481,9 +541,17 @@ async function saveNewSignalsToLedger(swingTrades: any[], breakoutPlays: any[], 
       if (existing) continue;
 
       const entryPrice = play.price || 0;
-      const stopLoss = play.stopLoss || +(entryPrice * 0.95).toFixed(2);
-      const targetPrice = play.target || +(entryPrice * 1.05).toFixed(2);
-      
+      const direction = play.action === "SHORT" ? "SHORT" : "LONG";
+      // Direction-aware levels (5% risk / 10% reward, 1:2 R:R). For a SHORT the
+      // stop must sit ABOVE entry and the target BELOW it — otherwise the trade
+      // "stops out" instantly and reports a nonsensical positive return.
+      const stopLoss = direction === "LONG"
+        ? +(entryPrice * 0.95).toFixed(2)
+        : +(entryPrice * 1.05).toFixed(2);
+      const targetPrice = direction === "LONG"
+        ? +(entryPrice * 1.10).toFixed(2)
+        : +(entryPrice * 0.90).toFixed(2);
+
       const expiryDate = new Date();
       expiryDate.setDate(now.getDate() + play.daysToEarnings);
 
@@ -492,7 +560,7 @@ async function saveNewSignalsToLedger(swingTrades: any[], breakoutPlays: any[], 
           symbol,
           name: play.name,
           type,
-          direction: play.action === "SHORT" ? "SHORT" : "LONG",
+          direction,
           entryPrice,
           stopLoss,
           targetPrice,

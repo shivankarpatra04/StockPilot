@@ -1,31 +1,32 @@
 // filepath: src/app/dashboard/compare/page.tsx
 "use client";
 
-import { useState, useCallback, useEffect } from "react";
+import { useState, useCallback, useEffect, useMemo } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ComparisonCard from "@/components/ComparisonCard";
 import ScoreBarChart from "@/components/ScoreBarChart";
-import { Search, X, Sparkles, AlertCircle, Plus, Loader2 } from "lucide-react";
-import type { StockQuote, AIScore } from "@/types";
-import { computeAIScore } from "@/lib/ai-score";
+import { Search, X, Sparkles, AlertCircle, Loader2, Crown } from "lucide-react";
+import type { StockQuote } from "@/types";
+import {
+  COMPARE_GOALS,
+  computeAIScoreForGoal,
+  getStockInsights,
+  getMetricWinners,
+  getWinnerReason,
+  type CompareGoal,
+} from "@/lib/compare";
 
 import StockSearch from "@/components/StockSearch";
-
-
-interface ComparisonResult {
-  quote: StockQuote;
-  aiScore: AIScore;
-}
 
 const SUGGESTED_SYMBOLS = ["RELIANCE:NSE", "TCS:NSE", "INFY:NSE", "HDFCBANK:NSE", "ICICIBANK:NSE", "SBIN:NSE", "BHARTIARTL:NSE"];
 
 export default function ComparePage() {
-  const { analysisDays } = useAppStore();
+  const { analysisDays, isSimpleMode } = useAppStore();
   const [enteredSymbols, setEnteredSymbols] = useState<string[]>([]);
-  const [results, setResults] = useState<ComparisonResult[]>([]);
+  const [quotes, setQuotes] = useState<StockQuote[]>([]);
+  const [goal, setGoal] = useState<CompareGoal>("balanced");
   const [aiVerdict, setAiVerdict] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -34,6 +35,32 @@ export default function ComparePage() {
   useEffect(() => {
     setIsMounted(true);
   }, []);
+
+  // Derive goal-weighted scores + ranking from raw quotes. Re-runs instantly
+  // when the goal changes — no refetch needed.
+  const ranked = useMemo(() => {
+    const scored = quotes.map((quote) => ({
+      quote,
+      aiScore: computeAIScoreForGoal(quote, goal),
+    }));
+    const order = [...scored].sort((a, b) => b.aiScore.score - a.aiScore.score);
+    const rankBySymbol = new Map<string, number>();
+    order.forEach((item, i) => rankBySymbol.set(item.quote.symbol, i + 1));
+    return { scored, order, rankBySymbol };
+  }, [quotes, goal]);
+
+  const metricWinners = useMemo(
+    () => getMetricWinners(ranked.scored),
+    [ranked.scored]
+  );
+
+  // Clear winner only when more than one stock and a true #1 (no tie at top).
+  const topPick = useMemo(() => {
+    if (ranked.order.length < 2) return null;
+    const [first, second] = ranked.order;
+    if (first.aiScore.score === second.aiScore.score) return null;
+    return first;
+  }, [ranked.order]);
 
   function addSymbol(sym: string) {
     const upper = sym.trim().toUpperCase();
@@ -61,7 +88,7 @@ export default function ComparePage() {
 
     setIsLoading(true);
     setError(null);
-    setResults([]);
+    setQuotes([]);
     setAiVerdict(null);
 
     try {
@@ -74,19 +101,15 @@ export default function ComparePage() {
         })
       );
 
-      const validResults: ComparisonResult[] = [];
+      const validQuotes: StockQuote[] = [];
       const failedSymbols: string[] = [];
 
       quoteResponses.forEach((quote, idx) => {
-        if (quote) {
-          const aiScore = computeAIScore(quote);
-          validResults.push({ quote, aiScore });
-        } else {
-          failedSymbols.push(enteredSymbols[idx]);
-        }
+        if (quote) validQuotes.push(quote);
+        else failedSymbols.push(enteredSymbols[idx]);
       });
 
-      if (validResults.length === 0) {
+      if (validQuotes.length === 0) {
         setError(
           "Could not fetch data for any of the entered symbols. Please check the symbols and try again."
         );
@@ -99,27 +122,27 @@ export default function ComparePage() {
         );
       }
 
-      setResults(validResults);
+      setQuotes(validQuotes);
 
-      // Fetch System verdict if we have scores
-      if (validResults.length >= 1) {
-        try {
-          const verdictRes = await fetch("/api/claude/compare", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({
-              symbols: validResults.map((r) => r.quote.symbol),
-              scores: validResults.map((r) => r.aiScore.score),
-              days: analysisDays
-            }),
-          });
-          const verdictData = (await verdictRes.json()) as { text: string };
-          setAiVerdict(verdictData.text);
-        } catch {
-          setAiVerdict(
-            "System verdict temporarily unavailable. Please try again."
-          );
-        }
+      // Fetch System verdict using the currently selected goal's scores.
+      const scores = validQuotes.map(
+        (q) => computeAIScoreForGoal(q, goal).score
+      );
+      try {
+        const verdictRes = await fetch("/api/claude/compare", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            symbols: validQuotes.map((q) => q.symbol),
+            scores,
+            days: analysisDays,
+            mode: isSimpleMode ? "simple" : "expert",
+          }),
+        });
+        const verdictData = (await verdictRes.json()) as { text: string };
+        setAiVerdict(verdictData.text);
+      } catch {
+        setAiVerdict("System verdict temporarily unavailable. Please try again.");
       }
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
@@ -127,33 +150,32 @@ export default function ComparePage() {
     } finally {
       setIsLoading(false);
     }
-  }, [enteredSymbols, analysisDays]);
+  }, [enteredSymbols, analysisDays, goal, isSimpleMode]);
 
   // Auto-compare when global range changes
   useEffect(() => {
-    if (isMounted && results.length > 0 && !isLoading) {
+    if (isMounted && quotes.length > 0 && !isLoading) {
       handleCompare();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [analysisDays]); // Only trigger on range change
 
-  const chartData = results.map((r) => ({
+  const chartData = ranked.scored.map((r) => ({
     symbol: r.quote.symbol,
     score: r.aiScore.score,
   }));
+
+  const hasResults = quotes.length > 0;
 
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-text-primary">
-          Stock Comparison
-        </h1>
+        <h1 className="text-2xl font-bold text-text-primary">Stock Comparison</h1>
         <p className="text-text-muted text-sm mt-1">
-          Compare up to 3 stocks side-by-side with Technical scores and live data
+          Compare up to 3 stocks side-by-side with technical scores and live data
         </p>
       </div>
-
-
 
       {/* Search Section */}
       <Card className="overflow-visible">
@@ -161,9 +183,9 @@ export default function ComparePage() {
           <div className="space-y-4">
             {/* Search Input */}
             <div className="flex flex-col sm:flex-row gap-3">
-              <StockSearch 
-                onSelect={addSymbol} 
-                disabled={enteredSymbols.length >= 3} 
+              <StockSearch
+                onSelect={addSymbol}
+                disabled={enteredSymbols.length >= 3}
               />
               <Button
                 onClick={handleCompare}
@@ -239,29 +261,97 @@ export default function ComparePage() {
       </Card>
 
       {/* Results */}
-      {results.length > 0 && (
+      {hasResults && (
         <>
+          {/* Goal selector — re-weights scores for what the user actually wants */}
+          <div>
+            <p className="text-sm font-medium text-text-primary mb-2">
+              What are you optimizing for?
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {COMPARE_GOALS.map((g) => (
+                <button
+                  key={g.id}
+                  onClick={() => setGoal(g.id)}
+                  title={g.description}
+                  className={`px-3 py-1.5 rounded-full text-sm font-medium border transition-colors ${
+                    goal === g.id
+                      ? "bg-primary text-white border-primary shadow-glow"
+                      : "border-border text-text-muted hover:border-primary hover:text-primary"
+                  }`}
+                >
+                  {g.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-xs text-text-muted mt-1.5">
+              {COMPARE_GOALS.find((g) => g.id === goal)?.description}
+            </p>
+          </div>
+
+          {/* Winner banner */}
+          {topPick && (
+            <Card className="border-secondary/50 shadow-glow bg-secondary/5">
+              <CardContent className="p-4 sm:p-5">
+                <div className="flex items-center gap-3 sm:gap-4">
+                  <div className="w-11 h-11 rounded-xl bg-secondary flex items-center justify-center flex-shrink-0 shadow-md">
+                    <Crown className="w-6 h-6 text-white" />
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs uppercase tracking-wider text-secondary font-semibold">
+                        Top Pick
+                      </span>
+                      <span className="text-xs text-text-muted">
+                        for {COMPARE_GOALS.find((g) => g.id === goal)?.label}
+                      </span>
+                    </div>
+                    <p className="text-text-primary font-semibold mt-0.5">
+                      {topPick.quote.shortName}{" "}
+                      <span className="text-text-muted font-normal">
+                        ({topPick.quote.symbol}) · score {topPick.aiScore.score}
+                      </span>
+                    </p>
+                    <p className="text-sm text-text-muted mt-1">
+                      {getWinnerReason(topPick.quote, topPick.aiScore)}
+                    </p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {/* Comparison Cards */}
           <div
             className={`grid gap-6 ${
-              results.length === 1
+              ranked.scored.length === 1
                 ? "sm:grid-cols-1 max-w-md"
-                : results.length === 2
+                : ranked.scored.length === 2
                 ? "sm:grid-cols-2"
                 : "sm:grid-cols-3"
             }`}
           >
-            {results.map((result) => (
-              <ComparisonCard
-                key={result.quote.symbol}
-                quote={result.quote}
-                aiScore={result.aiScore}
-              />
-            ))}
+            {ranked.scored.map((result) => {
+              const symbol = result.quote.symbol;
+              return (
+                <ComparisonCard
+                  key={symbol}
+                  quote={result.quote}
+                  aiScore={result.aiScore}
+                  rank={ranked.scored.length > 1 ? ranked.rankBySymbol.get(symbol) : undefined}
+                  isWinner={topPick?.quote.symbol === symbol}
+                  insights={getStockInsights(result.quote, result.aiScore)}
+                  metricWins={{
+                    pe: metricWinners.pe === symbol,
+                    revGrowth: metricWinners.revGrowth === symbol,
+                  }}
+                />
+              );
+            })}
           </div>
 
           {/* Technical Score Bar Chart */}
-          {results.length > 1 && (
+          {ranked.scored.length > 1 && (
             <Card>
               <CardHeader>
                 <CardTitle className="text-base">Technical Score Comparison</CardTitle>
@@ -287,9 +377,7 @@ export default function ComparePage() {
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h3 className="font-semibold text-text-primary">
-                        Trade Verdict
-                      </h3>
+                      <h3 className="font-semibold text-text-primary">Trade Verdict</h3>
                       <span className="text-xs px-2 py-0.5 rounded-full bg-primary/20 text-primary border border-primary/30">
                         System
                       </span>
@@ -310,7 +398,7 @@ export default function ComparePage() {
       )}
 
       {/* Empty state */}
-      {!isLoading && results.length === 0 && enteredSymbols.length === 0 && (
+      {!isLoading && !hasResults && enteredSymbols.length === 0 && (
         <div className="text-center py-16">
           <div className="w-14 h-14 rounded-2xl bg-primary/10 flex items-center justify-center mx-auto mb-4">
             <Search className="w-7 h-7 text-primary" />
@@ -319,7 +407,7 @@ export default function ComparePage() {
             Start comparing stocks
           </h3>
           <p className="text-text-muted text-sm max-w-sm mx-auto">
-            Enter up to 3 stock symbols above and click &quot;Compare Stocks&quot; to
+            Enter up to 3 stock symbols above and click &quot;Compare Now&quot; to
             see technical scores, live data, and an automated verdict.
           </p>
         </div>

@@ -38,7 +38,7 @@ const navItems = [
 
 export default function Sidebar() {
   const pathname = usePathname();
-  const { sidebarOpen, toggleSidebar, setSidebarOpen, isSimpleMode, toggleSimpleMode } = useAppStore();
+  const { sidebarOpen, toggleSidebar, setSidebarOpen } = useAppStore();
 
   // Close sidebar on mobile when route changes
   useEffect(() => {
@@ -151,42 +151,6 @@ export default function Sidebar() {
 
         {/* Footer Actions */}
         <div className="p-3 border-t border-border space-y-2">
-          {sidebarOpen ? (
-            <div className="flex bg-background border border-border p-1 rounded-xl mb-2">
-              <button
-                onClick={() => !isSimpleMode && toggleSimpleMode()}
-                className={cn(
-                  "flex-1 px-2 py-1.5 text-xs font-bold rounded-lg transition-colors",
-                  isSimpleMode ? "bg-primary text-primary-foreground shadow-sm" : "text-text-muted hover:text-text-primary"
-                )}
-              >
-                Simple
-              </button>
-              <button
-                onClick={() => isSimpleMode && toggleSimpleMode()}
-                className={cn(
-                  "flex-1 px-2 py-1.5 text-xs font-bold rounded-lg transition-colors",
-                  !isSimpleMode ? "bg-primary text-primary-foreground shadow-sm" : "text-text-muted hover:text-text-primary"
-                )}
-              >
-                Expert
-              </button>
-            </div>
-          ) : (
-            <button
-              onClick={toggleSimpleMode}
-              className={cn(
-                "w-full flex items-center justify-center h-9 rounded-button border text-xs font-bold transition-all duration-200 mb-2",
-                isSimpleMode 
-                  ? "bg-primary/20 text-primary border-primary/30" 
-                  : "bg-surface text-text-muted border-border hover:text-text-primary hover:bg-card"
-              )}
-              title={isSimpleMode ? "Simple Mode ON" : "Expert Mode ON"}
-            >
-              {isSimpleMode ? "S" : "E"}
-            </button>
-          )}
-
           {sidebarOpen && (
             <button
               onClick={() => signOut({ callbackUrl: "/" })}

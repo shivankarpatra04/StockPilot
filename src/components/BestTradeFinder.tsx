@@ -125,7 +125,7 @@ export default function BestTradeFinder() {
         const res = await fetch("/api/best-trade", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ days: analysisDays })
+          body: JSON.stringify({ days: analysisDays, mode: isSimpleMode ? "simple" : "expert" })
         });
         
         if (!res.ok) {
@@ -142,7 +142,7 @@ export default function BestTradeFinder() {
     }
 
     fetchBestTrade();
-  }, [analysisDays]);
+  }, [analysisDays, isSimpleMode]);
 
   if (loading) {
     return (
@@ -168,22 +168,22 @@ export default function BestTradeFinder() {
   let ringColor = "";
   let ringBg = "";
   if (bestTrade.score >= 75) {
-    ratingLabel = "Strong Buy";
+    ratingLabel = isSimpleMode ? "Pakka Buy 🟢" : "Strong Buy";
     ratingColor = "bg-success/20 text-success border-success/30";
     ringColor = "stroke-success";
     ringBg = "stroke-success/10";
   } else if (bestTrade.score >= 60) {
-    ratingLabel = "Moderate Buy";
+    ratingLabel = isSimpleMode ? "Theek Buy 🟡" : "Moderate Buy";
     ratingColor = "bg-primary/20 text-primary border-primary/30";
     ringColor = "stroke-primary";
     ringBg = "stroke-primary/10";
   } else if (bestTrade.score >= 45) {
-    ratingLabel = "Neutral";
+    ratingLabel = isSimpleMode ? "Abhi ruko 🤔" : "Neutral";
     ratingColor = "bg-warning/20 text-warning border-warning/30";
     ringColor = "stroke-warning";
     ringBg = "stroke-warning/10";
   } else {
-    ratingLabel = "Avoid";
+    ratingLabel = isSimpleMode ? "Door raho 🔴" : "Avoid";
     ratingColor = "bg-danger/20 text-danger border-danger/30";
     ringColor = "stroke-danger";
     ringBg = "stroke-danger/10";
@@ -222,7 +222,7 @@ export default function BestTradeFinder() {
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-text-muted font-semibold hidden sm:inline">Signal Strength:</span>
+            <span className="text-xs text-text-muted font-semibold hidden sm:inline">{isSimpleMode ? "Salah:" : "Signal Strength:"}</span>
             <Badge variant="outline" className={`font-bold text-xs px-2.5 py-0.5 uppercase tracking-wide ${ratingColor}`}>
               {ratingLabel}
             </Badge>
@@ -257,7 +257,7 @@ export default function BestTradeFinder() {
               </svg>
               <div className="absolute inset-0 flex flex-col items-center justify-center">
                 <span className="text-3xl font-extrabold text-text-primary">{bestTrade.score}</span>
-                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">Buy Score</span>
+                <span className="text-[10px] font-bold text-text-muted uppercase tracking-wider">{isSimpleMode ? "Score 📊" : "Buy Score"}</span>
               </div>
             </div>
             <div className="text-center mt-3">
@@ -273,7 +273,7 @@ export default function BestTradeFinder() {
             <div>
               <h4 className="text-sm font-bold text-text-primary uppercase tracking-wider mb-2 flex items-center gap-1.5">
                 <Zap className="w-4 h-4 text-primary" />
-                Why this is the best pick
+                {isSimpleMode ? "Ye sabse acchi pick kyun? 🤔" : "Why this is the best pick"}
               </h4>
               <p className="text-text-primary/95 text-base md:text-lg leading-relaxed font-semibold bg-background/50 border border-border/50 rounded-2xl p-5 md:p-6 shadow-inner italic">
                 &quot;{bestTrade.reasoning}&quot;
@@ -282,7 +282,7 @@ export default function BestTradeFinder() {
               {bestTrade.categories && bestTrade.categories.length > 0 && (
                 <div className="mt-4 flex flex-col gap-2">
                   <span className="text-[10px] font-black uppercase tracking-widest text-text-muted">
-                    Also appears in Opportunities →
+                    {isSimpleMode ? "Ye yahan bhi dikhta hai 👇" : "Also appears in Opportunities →"}
                   </span>
                   <div className="flex flex-wrap gap-2">
                     {bestTrade.categories.map((cat) => {
@@ -318,19 +318,19 @@ export default function BestTradeFinder() {
             {/* Trading Levels */}
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-4">
               <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Buy Entry Price</span>
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">{isSimpleMode ? "Khareedo (entry) 💰" : "Buy Entry Price"}</span>
                 <span className="text-base sm:text-lg font-extrabold text-text-primary">₹{bestTrade.currentPrice.toFixed(2)}</span>
               </div>
               <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Target Price</span>
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">{isSimpleMode ? "Target (profit) 🎯" : "Target Price"}</span>
                 <span className="text-base sm:text-lg font-extrabold text-success">₹{bestTrade.target.toFixed(2)}</span>
               </div>
               <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Stop Loss</span>
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">{isSimpleMode ? "Stop Loss (safety) 🛑" : "Stop Loss"}</span>
                 <span className="text-base sm:text-lg font-extrabold text-danger">₹{bestTrade.stopLoss.toFixed(2)}</span>
               </div>
               <div className="p-3 sm:p-3.5 bg-background/40 border border-border/40 rounded-xl">
-                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">Risk / Reward</span>
+                <span className="text-[10px] sm:text-xs text-text-muted block font-semibold mb-1">{isSimpleMode ? "Risk vs Faayda ⚖️" : "Risk / Reward"}</span>
                 <span className="text-base sm:text-lg font-extrabold text-primary">1 : 2.2</span>
               </div>
             </div>
@@ -344,21 +344,21 @@ export default function BestTradeFinder() {
               disabled
               className="bg-secondary/20 text-secondary border border-secondary/30 font-bold px-6 cursor-not-allowed flex items-center justify-center gap-2 w-full sm:w-auto"
             >
-              <Check className="w-4 h-4" /> Added to Watchlist
+              <Check className="w-4 h-4" /> {isSimpleMode ? "Watchlist me add ho gaya ✅" : "Added to Watchlist"}
             </Button>
           ) : watchlistLoading ? (
             <Button
               disabled
               className="bg-primary/50 text-primary-foreground font-bold px-6 flex items-center justify-center gap-2 w-full sm:w-auto"
             >
-              <Loader2 className="w-4 h-4 animate-spin" /> Adding...
+              <Loader2 className="w-4 h-4 animate-spin" /> {isSimpleMode ? "Add ho raha hai..." : "Adding..."}
             </Button>
           ) : (
             <Button
               onClick={handleAddToWatchlist}
               className="bg-primary text-primary-foreground hover:bg-primary/90 font-bold px-6 shadow-glow flex items-center justify-center gap-2 w-full sm:w-auto"
             >
-              <Plus className="w-4 h-4" /> Add to Watchlist
+              <Plus className="w-4 h-4" /> {isSimpleMode ? "Watchlist me daalo ➕" : "Add to Watchlist"}
             </Button>
           )}
 
@@ -368,7 +368,7 @@ export default function BestTradeFinder() {
             onClick={() => setShowAllCompared(!showAllCompared)}
             className="text-text-muted hover:text-text-primary font-bold w-full sm:w-auto"
           >
-            {showAllCompared ? "Hide comparisons" : `Compare all ${allCompared.length} stocks`}
+            {showAllCompared ? (isSimpleMode ? "Chhupao" : "Hide comparisons") : (isSimpleMode ? `Saare ${allCompared.length} stocks compare karo` : `Compare all ${allCompared.length} stocks`)}
             {showAllCompared ? <ChevronUp className="w-4 h-4 ml-1.5" /> : <ChevronDown className="w-4 h-4 ml-1.5" />}
           </Button>
         </div>

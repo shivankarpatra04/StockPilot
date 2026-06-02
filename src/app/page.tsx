@@ -16,6 +16,47 @@ import {
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Navbar from "@/components/Navbar";
+import { prisma } from "@/lib/prisma";
+
+export const dynamic = "force-dynamic";
+
+// Pulls real numbers from the scanned-stock cache and the signal ledger so the
+// hero stats and widget reflect live platform data instead of hardcoded mocks.
+async function getLandingData() {
+  try {
+    const [stockCount, stocks, resolvedSignals] = await Promise.all([
+      prisma.scannedStock.count(),
+      prisma.scannedStock.findMany({ orderBy: { lastUpdated: "desc" } }),
+      prisma.tradingSignal.findMany({ where: { status: { not: "ACTIVE" } } }),
+    ]);
+
+    const wins = resolvedSignals.filter((s) => s.status === "SUCCESSFUL").length;
+    const resolvedCount = resolvedSignals.length;
+    const winRate =
+      resolvedCount > 0 ? Math.round((wins / resolvedCount) * 100) : null;
+
+    const topStocks = stocks
+      .map((s) => {
+        const a = (s.analysisData as Record<string, any>) || {};
+        const tf = a["60"] ?? a["30"] ?? Object.values(a)[0] ?? null;
+        const change = tf?.change ?? s.change ?? 0;
+        return {
+          sym: s.symbol,
+          name: s.shortName ?? s.symbol.split(":")[0],
+          score: Math.round(tf?.score ?? 0),
+          change: `${change >= 0 ? "+" : ""}${Number(change).toFixed(1)}%`,
+          positive: change >= 0,
+          reasoning: tf?.reasoning ?? "",
+        };
+      })
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 4);
+
+    return { stockCount, winRate, resolvedCount, topStocks };
+  } catch {
+    return { stockCount: 0, winRate: null, resolvedCount: 0, topStocks: [] as any[] };
+  }
+}
 
 // ─── Feature Cards ────────────────────────────────────────────────────────────
 const features = [
@@ -125,7 +166,17 @@ const plans = [
   },
 ];
 
-export default function LandingPage() {
+export default async function LandingPage() {
+  const { stockCount, winRate, topStocks } = await getLandingData();
+
+  const heroStats = [
+    { value: stockCount > 0 ? `${stockCount}` : "—", label: "Stocks Tracked" },
+    { value: "4", label: "Strategies" },
+    { value: winRate != null ? `${winRate}%` : "—", label: "Win Rate" },
+  ];
+
+  const topStock = topStocks[0] ?? null;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -175,11 +226,7 @@ export default function LandingPage() {
               </div>
 
               <div className="flex items-center gap-6 mt-10">
-                {[
-                  { value: "10K+", label: "Investors" },
-                  { value: "50+", label: "Markets" },
-                  { value: "98%", label: "Uptime" },
-                ].map((stat) => (
+                {heroStats.map((stat) => (
                   <div key={stat.label}>
                     <p className="text-2xl font-bold gradient-text">
                       {stat.value}
@@ -208,13 +255,13 @@ export default function LandingPage() {
                   </span>
                 </div>
 
-                {/* Mock stocks */}
-                {[
-                  { sym: "RELIANCE:NSE", name: "Reliance Industries", score: 87, change: "+2.4%", positive: true },
-                  { sym: "TCS:NSE", name: "Tata Consultancy Services", score: 91, change: "+4.8%", positive: true },
-                  { sym: "HDFCBANK:NSE", name: "HDFC Bank", score: 74, change: "+1.1%", positive: true },
-                  { sym: "INFY:NSE", name: "Infosys", score: 42, change: "-1.3%", positive: false },
-                ].map((stock) => (
+                {/* Live top-scored stocks from the scanner cache */}
+                {topStocks.length === 0 && (
+                  <div className="py-8 text-center text-xs text-text-muted">
+                    Live scores populate once the market scan runs.
+                  </div>
+                )}
+                {topStocks.map((stock) => (
                   <div
                     key={stock.sym}
                     className="flex items-center justify-between py-3 border-b border-border/50 last:border-0"
@@ -262,26 +309,41 @@ export default function LandingPage() {
                     <Brain className="w-3.5 h-3.5 text-primary mt-0.5 flex-shrink-0" />
                     <p className="text-xs text-text-muted">
                       <span className="text-primary font-medium">Trade Verdict:</span>{" "}
-                      TCS:NSE shows strongest momentum with high volume and both MAs
-                      aligned positively.
+                      {topStock?.reasoning
+                        ? `${topStock.sym} — ${topStock.reasoning}`
+                        : "Run the market scan to surface the day's strongest setup."}
                     </p>
                   </div>
                 </div>
               </div>
 
-              {/* Floating decorative badge */}
-              <div className="absolute -top-4 -right-4 glass rounded-xl px-3 py-2 flex items-center gap-2">
-                <TrendingUp className="w-4 h-4 text-secondary" />
-                <span className="text-xs font-semibold text-secondary">
-                  +18.4%
-                </span>
-              </div>
-              <div className="absolute -bottom-4 -left-4 glass rounded-xl px-3 py-2 flex items-center gap-2">
-                <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
-                <span className="text-xs font-semibold text-text-primary">
-                  Strong Buy
-                </span>
-              </div>
+              {/* Floating badges reflecting the top live setup */}
+              {topStock && (
+                <>
+                  <div className="absolute -top-4 -right-4 glass rounded-xl px-3 py-2 flex items-center gap-2">
+                    <TrendingUp
+                      className={`w-4 h-4 ${topStock.positive ? "text-secondary" : "text-danger"}`}
+                    />
+                    <span
+                      className={`text-xs font-semibold ${topStock.positive ? "text-secondary" : "text-danger"}`}
+                    >
+                      {topStock.change}
+                    </span>
+                  </div>
+                  <div className="absolute -bottom-4 -left-4 glass rounded-xl px-3 py-2 flex items-center gap-2">
+                    <Star className="w-4 h-4 text-yellow-400 fill-yellow-400" />
+                    <span className="text-xs font-semibold text-text-primary">
+                      {topStock.score >= 80
+                        ? "Strong Buy"
+                        : topStock.score >= 60
+                        ? "Bullish"
+                        : topStock.score >= 40
+                        ? "Neutral"
+                        : "Caution"}
+                    </span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>

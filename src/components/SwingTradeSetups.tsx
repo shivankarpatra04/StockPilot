@@ -221,10 +221,10 @@ export default function SwingTradeSetups({ analysisDays, isSimpleMode, dynamicDa
                       {/* Price levels — compact row */}
                       <div className="grid grid-cols-4 gap-2">
                         {[
-                          { label: isSimpleMode ? "Buy Zone" : "Entry", value: trade.entry, color: "text-white" },
-                          { label: isSimpleMode ? "Exit If" : "Stop Loss", value: trade.stopLoss, color: "text-red-400" },
-                          { label: isSimpleMode ? "Aim 1" : "Target 1", value: trade.target1, color: "text-emerald-400" },
-                          { label: isSimpleMode ? "Aim 2" : "Target 2", value: trade.target2, color: "text-emerald-400" },
+                          { label: isSimpleMode ? "Khareedo 💰" : "Entry", value: trade.entry, color: "text-white" },
+                          { label: isSimpleMode ? "Yahan bech do 🛑" : "Stop Loss", value: trade.stopLoss, color: "text-red-400" },
+                          { label: isSimpleMode ? "Target 1 🎯" : "Target 1", value: trade.target1, color: "text-emerald-400" },
+                          { label: isSimpleMode ? "Target 2 🎯" : "Target 2", value: trade.target2, color: "text-emerald-400" },
                         ].map(item => (
                           <div key={item.label} className="bg-[#0E0E18] rounded-lg p-2.5 border border-border/30">
                             <p className="text-[9px] text-slate-600 font-bold uppercase tracking-wider mb-1">{item.label}</p>
@@ -269,7 +269,7 @@ export default function SwingTradeSetups({ analysisDays, isSimpleMode, dynamicDa
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2">
                           <ShieldAlert className="w-3.5 h-3.5 text-slate-600" />
-                          <span className="text-xs text-slate-600">{isSimpleMode ? "Confidence" : "AI Confidence"}:</span>
+                          <span className="text-xs text-slate-600">{isSimpleMode ? "Bharosa" : "AI Confidence"}:</span>
                           <span className={cn("text-sm font-black", isLong ? "text-emerald-400" : "text-red-400")}>{trade.confidence}%</span>
                         </div>
                         <Link href={`/dashboard/analysis?symbol=${encodeURIComponent(trade.symbol)}`}>

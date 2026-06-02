@@ -64,10 +64,13 @@ model Alert {
   id          String    @id @default(cuid())
   userId      String
   symbol      String
-  condition   String
+  condition   String    // "above" | "below"
+  alertType   String    @default("CUSTOM") // TARGET | STOP_LOSS | BUY_ZONE | SELL_ZONE | CUSTOM
+  note        String?
   targetPrice Float
   triggered   Boolean   @default(false)
   triggeredAt DateTime?
+  seen        Boolean   @default(false) // false after triggering = unread in-app notification
   createdAt   DateTime  @default(now())
   user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 

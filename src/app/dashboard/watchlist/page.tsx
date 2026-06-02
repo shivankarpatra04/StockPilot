@@ -7,9 +7,8 @@ import {
   Search, 
   TrendingUp, 
   TrendingDown, 
-  Activity, 
-  Brain, 
-  Folder, 
+  Activity,
+  Folder,
   ChevronRight,
   X,
   Zap,
@@ -33,6 +32,30 @@ const TABS = ["Overview", "Alerts", "Groups", "Performance"];
 const POPULAR_PICKS = ["RELIANCE", "TCS", "HDFCBANK", "INFY", "TATAMOTORS"];
 
 import { useAppStore } from "@/store/useAppStore";
+
+// Each alert type maps to a comparison direction ("above"/"below") and a display style.
+const ALERT_TYPE_META: Record<string, { label: string; color: string; condition: "above" | "below" }> = {
+  TARGET: { label: "Target", color: "bg-secondary", condition: "above" },
+  STOP_LOSS: { label: "Stop Loss", color: "bg-danger", condition: "below" },
+  BUY_ZONE: { label: "Buy Zone", color: "bg-blue-500", condition: "below" },
+  SELL_ZONE: { label: "Sell Zone", color: "bg-amber-500", condition: "above" },
+  CUSTOM: { label: "Custom", color: "bg-primary", condition: "above" },
+};
+
+// Convert a raw alert row from the API into the shape the Alerts tab renders.
+function formatAlert(a: any) {
+  const meta = ALERT_TYPE_META[a.alertType] || ALERT_TYPE_META.CUSTOM;
+  const arrow = a.condition === "above" ? "≥" : "≤";
+  return {
+    id: a.id,
+    symbol: a.symbol.split(":")[0],
+    desc: a.note ? a.note : `${arrow} ₹${a.targetPrice}`,
+    type: meta.label,
+    status: a.triggered ? "Triggered" : "Active",
+    time: new Date(a.createdAt).toLocaleDateString(),
+    typeColor: meta.color,
+  };
+}
 
 export default function WatchlistPage() {
   const [isMounted, setIsMounted] = useState(false);
@@ -61,6 +84,15 @@ export default function WatchlistPage() {
   // Alerts state
   const [alerts, setAlerts] = useState<any[]>([]);
   const [alertToDelete, setAlertToDelete] = useState<string | null>(null);
+  const [isAddingAlert, setIsAddingAlert] = useState(false);
+  const [isCreatingAlert, setIsCreatingAlert] = useState(false);
+  const [alertForm, setAlertForm] = useState<{
+    symbol: string;
+    alertType: string;
+    condition: "above" | "below";
+    targetPrice: string;
+    note: string;
+  }>({ symbol: "", alertType: "TARGET", condition: "above", targetPrice: "", note: "" });
 
   // Performance state
   const [buyPrices, setBuyPrices] = useState<Record<string, number>>({});
@@ -110,15 +142,7 @@ export default function WatchlistPage() {
         const alertRes = await fetch("/api/alerts");
         if (alertRes.ok) {
           const alertData = await alertRes.json();
-          setAlerts(alertData.map((a: any) => ({
-            id: a.id,
-            symbol: a.symbol,
-            desc: `${a.condition} ₹${a.targetPrice}`,
-            type: "Price Alert",
-            status: a.triggered ? "Triggered" : "Active",
-            time: new Date(a.createdAt).toLocaleDateString(),
-            typeColor: "bg-blue-500"
-          })));
+          setAlerts(alertData.map(formatAlert));
         }
       } catch (err) {
         console.error("Failed to load data from DB:", err);
@@ -309,6 +333,50 @@ export default function WatchlistPage() {
     aiSignals: 0
   };
 
+  const handleCreateAlert = async () => {
+    const price = parseFloat(alertForm.targetPrice);
+    if (!alertForm.symbol || isNaN(price) || price <= 0) {
+      setToast("Pick a stock and enter a valid price");
+      setTimeout(() => setToast(null), 3000);
+      return;
+    }
+
+    const condition = alertForm.alertType === "CUSTOM"
+      ? alertForm.condition
+      : ALERT_TYPE_META[alertForm.alertType].condition;
+
+    setIsCreatingAlert(true);
+    try {
+      const res = await fetch("/api/alerts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          symbol: alertForm.symbol,
+          condition,
+          alertType: alertForm.alertType,
+          targetPrice: price,
+          note: alertForm.note.trim() || null,
+        }),
+      });
+
+      if (res.ok) {
+        const created = await res.json();
+        setAlerts(prev => [formatAlert(created), ...prev]);
+        setIsAddingAlert(false);
+        setAlertForm({ symbol: "", alertType: "TARGET", condition: "above", targetPrice: "", note: "" });
+        setToast("Alert created");
+      } else {
+        setToast("Failed to create alert");
+      }
+    } catch (err) {
+      console.error("Create alert error:", err);
+      setToast("Failed to create alert");
+    } finally {
+      setIsCreatingAlert(false);
+      setTimeout(() => setToast(null), 3000);
+    }
+  };
+
   const handleDeleteAlert = async (id: string) => {
     try {
       const res = await fetch(`/api/alerts?id=${id}`, { method: "DELETE" });
@@ -414,75 +482,16 @@ export default function WatchlistPage() {
         const aiData = await res.json();
         
         // Update stock with live system data
-        setStocks(prev => prev.map(s => s.symbol === selectedStock.symbol ? { 
-          ...s, 
+        setStocks(prev => prev.map(s => s.symbol === selectedStock.symbol ? {
+          ...s,
           price: aiData.currentPrice || s.price,
           change: aiData.change || s.change,
           verdict: aiData.action || "Wait",
           verdictText: aiData.verdict || "",
           confidence: aiData.probability?.profitProb || 50,
           hasSignal: true,
-          isLoading: false 
+          isLoading: false
         } : s));
-
-        // Generate real alerts based on system analysis
-        const symbolStr = selectedStock.symbol.split(":")[0];
-
-        if (aiData.buyZones && aiData.buyZones.length > 0) {
-          try {
-            const alertRes = await fetch("/api/alerts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                symbol: selectedStock.symbol,
-                condition: "Price enters buy zone",
-                targetPrice: aiData.buyZones[0].low
-              })
-            });
-            if (alertRes.ok) {
-              const newAlert = await alertRes.json();
-              setAlerts(prev => [{
-                id: newAlert.id,
-                symbol: symbolStr,
-                desc: `Price enters buy zone ₹${newAlert.targetPrice}`,
-                type: "Price Alert",
-                status: "Active",
-                time: "Just now",
-                typeColor: "bg-blue-500"
-              }, ...prev]);
-            }
-          } catch (err) {
-            console.error("Failed to create buy zone alert:", err);
-          }
-        }
-
-        if (aiData.keyMetrics?.target1) {
-          try {
-            const alertRes = await fetch("/api/alerts", {
-              method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                symbol: selectedStock.symbol,
-                condition: "Target 1 reached",
-                targetPrice: aiData.keyMetrics.target1
-              })
-            });
-            if (alertRes.ok) {
-              const newAlert = await alertRes.json();
-              setAlerts(prev => [{
-                id: newAlert.id,
-                symbol: symbolStr,
-                desc: `Target 1 reached ₹${newAlert.targetPrice}`,
-                type: "Target",
-                status: "Active",
-                time: "Just now",
-                typeColor: "bg-secondary"
-              }, ...prev]);
-            }
-          } catch (err) {
-            console.error("Failed to create target alert:", err);
-          }
-        }
       } else {
         setStocks(prev => prev.map(s => s.symbol === selectedStock.symbol ? { 
           ...s, 
@@ -656,25 +665,6 @@ export default function WatchlistPage() {
         <div className="space-y-10">
           {activeTab === "Overview" && (
             <>
-              {/* System Flagged Section */}
-              <section className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <Brain className="w-5 h-5 text-primary" />
-                  <h2 className="text-lg font-bold text-text-primary">System Flagged Now</h2>
-                </div>
-                {flaggedStocks.length > 0 ? (
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {flaggedStocks.map(stock => (
-                      <StockCard key={stock.symbol} stock={stock} flagged onRemove={handleDeleteStock} />
-                    ))}
-                  </div>
-                ) : (
-                  <div className="p-10 border border-dashed border-border rounded-2xl text-center">
-                    <p className="text-sm text-text-muted">No high-probability signals detected in your list yet.</p>
-                  </div>
-                )}
-              </section>
-
               {/* All Stocks Grouped by Selection */}
               <section className="space-y-6">
                 <h2 className="text-lg font-bold text-text-primary">All Stocks</h2>
@@ -702,19 +692,51 @@ export default function WatchlistPage() {
           {activeTab === "Alerts" && (
             <div className="space-y-6 animate-fade-in">
               <div className="flex items-center justify-between">
-                <h2 className="text-lg font-bold text-text-primary">Active System Alerts</h2>
-                <Badge variant="outline" className="text-[10px] uppercase font-bold text-primary border-primary/20">
-                  {alerts.length} Alerts
-                </Badge>
+                <h2 className="text-lg font-bold text-text-primary">Price Alerts</h2>
+                <div className="flex items-center gap-3">
+                  <Badge variant="outline" className="text-[10px] uppercase font-bold text-primary border-primary/20">
+                    {alerts.length} Alerts
+                  </Badge>
+                  {!isAddingAlert && (
+                    <Button
+                      onClick={() => {
+                        setAlertForm(f => ({ ...f, symbol: stocks[0]?.symbol || "" }));
+                        setIsAddingAlert(true);
+                      }}
+                      size="sm"
+                      className="bg-primary hover:bg-primary/90 text-white rounded-lg flex items-center gap-1.5 h-8 text-xs"
+                    >
+                      <Plus className="w-4 h-4" /> New alert
+                    </Button>
+                  )}
+                </div>
               </div>
+
+              {isAddingAlert && (
+                <AlertCreateForm
+                  stocks={stocks}
+                  form={alertForm}
+                  setForm={setAlertForm}
+                  onCreate={handleCreateAlert}
+                  onCancel={() => setIsAddingAlert(false)}
+                  isCreating={isCreatingAlert}
+                />
+              )}
 
               {alerts.length === 0 ? (
                 <div className="py-20 flex flex-col items-center justify-center text-center">
                   <Bookmark className="w-12 h-12 text-text-muted opacity-20 mb-4" />
                   <h3 className="text-xl font-bold text-text-primary mb-2">No alerts set</h3>
-                  <p className="text-text-muted text-sm mb-6 max-w-xs">Add stocks to auto-generate system alerts based on zones and signals</p>
-                  <Button onClick={() => handleOpenAddModal()} size="sm" className="bg-primary hover:bg-primary/90 text-white rounded-full px-6">
-                    Add a stock
+                  <p className="text-text-muted text-sm mb-6 max-w-xs">Create a price alert and we&apos;ll notify you when it&apos;s hit.</p>
+                  <Button
+                    onClick={() => {
+                      setAlertForm(f => ({ ...f, symbol: stocks[0]?.symbol || "" }));
+                      setIsAddingAlert(true);
+                    }}
+                    size="sm"
+                    className="bg-primary hover:bg-primary/90 text-white rounded-full px-6"
+                  >
+                    Create an alert
                   </Button>
                 </div>
               ) : (
@@ -1431,6 +1453,147 @@ export default function WatchlistPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function AlertCreateForm({
+  stocks,
+  form,
+  setForm,
+  onCreate,
+  onCancel,
+  isCreating,
+}: {
+  stocks: any[];
+  form: { symbol: string; alertType: string; condition: "above" | "below"; targetPrice: string; note: string };
+  setForm: React.Dispatch<React.SetStateAction<{ symbol: string; alertType: string; condition: "above" | "below"; targetPrice: string; note: string }>>;
+  onCreate: () => void;
+  onCancel: () => void;
+  isCreating: boolean;
+}) {
+  const selected = stocks.find(s => s.symbol === form.symbol);
+  const currentPrice = selected?.price;
+  const effectiveCondition = form.alertType === "CUSTOM" ? form.condition : ALERT_TYPE_META[form.alertType].condition;
+
+  const typeOptions = ["TARGET", "STOP_LOSS", "BUY_ZONE", "SELL_ZONE", "CUSTOM"];
+
+  return (
+    <Card className="bg-card border-primary/40 shadow-glow-primary animate-slide-down">
+      <CardContent className="p-5 space-y-5">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-bold text-text-primary uppercase tracking-widest">New price alert</h3>
+          <button onClick={onCancel} className="text-text-muted hover:text-text-primary">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Stock picker */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Stock</label>
+          <select
+            value={form.symbol}
+            onChange={(e) => setForm(f => ({ ...f, symbol: e.target.value }))}
+            className="w-full h-11 bg-surface border border-border focus:border-primary rounded-lg px-3 text-sm font-bold text-text-primary outline-none"
+          >
+            {stocks.map(s => (
+              <option key={s.symbol} value={s.symbol}>
+                {s.symbol.split(":")[0]}{s.price ? ` — ₹${s.price.toLocaleString("en-IN")}` : ""}
+              </option>
+            ))}
+          </select>
+          {currentPrice ? (
+            <p className="text-[10px] text-text-muted">Current price: <span className="font-bold text-text-primary">₹{currentPrice.toLocaleString("en-IN")}</span></p>
+          ) : null}
+        </div>
+
+        {/* Alert type */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Alert type</label>
+          <div className="flex flex-wrap gap-2">
+            {typeOptions.map(type => (
+              <button
+                key={type}
+                onClick={() => setForm(f => ({ ...f, alertType: type }))}
+                className={cn(
+                  "px-3 py-1.5 rounded-lg text-xs font-bold border transition-all",
+                  form.alertType === type
+                    ? "bg-primary/10 border-primary text-primary shadow-glow"
+                    : "bg-surface border-border text-text-muted hover:border-border/80"
+                )}
+              >
+                {ALERT_TYPE_META[type].label}
+              </button>
+            ))}
+          </div>
+          <p className="text-[10px] text-text-muted">
+            Triggers when price goes{" "}
+            <span className="font-bold text-text-primary">{effectiveCondition === "above" ? "at or above" : "at or below"}</span>{" "}
+            your target.
+          </p>
+        </div>
+
+        {/* Custom direction toggle */}
+        {form.alertType === "CUSTOM" && (
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              onClick={() => setForm(f => ({ ...f, condition: "above" }))}
+              className={cn(
+                "h-9 rounded-lg text-xs font-bold border transition-all",
+                form.condition === "above" ? "bg-secondary/20 border-secondary text-secondary" : "bg-surface border-border text-text-muted"
+              )}
+            >
+              Rises above
+            </button>
+            <button
+              onClick={() => setForm(f => ({ ...f, condition: "below" }))}
+              className={cn(
+                "h-9 rounded-lg text-xs font-bold border transition-all",
+                form.condition === "below" ? "bg-danger/20 border-danger text-danger" : "bg-surface border-border text-text-muted"
+              )}
+            >
+              Falls below
+            </button>
+          </div>
+        )}
+
+        {/* Target price */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Target price (₹)</label>
+          <input
+            type="number"
+            value={form.targetPrice}
+            onChange={(e) => setForm(f => ({ ...f, targetPrice: e.target.value }))}
+            placeholder="e.g. 1450"
+            className="w-full h-11 bg-surface border border-border focus:border-primary rounded-lg px-3 text-sm font-bold text-text-primary outline-none placeholder:text-text-muted/40"
+          />
+        </div>
+
+        {/* Optional note */}
+        <div className="space-y-1.5">
+          <label className="text-[10px] font-bold text-text-muted uppercase tracking-widest">Note (optional)</label>
+          <input
+            type="text"
+            value={form.note}
+            onChange={(e) => setForm(f => ({ ...f, note: e.target.value }))}
+            placeholder="e.g. Add on dip"
+            className="w-full h-11 bg-surface border border-border focus:border-primary rounded-lg px-3 text-sm text-text-primary outline-none placeholder:text-text-muted/40"
+          />
+        </div>
+
+        <div className="flex items-center gap-3 pt-1">
+          <Button
+            onClick={onCreate}
+            disabled={isCreating}
+            className="flex-1 h-11 bg-primary hover:bg-primary/90 text-white font-bold rounded-lg"
+          >
+            {isCreating ? <Loader2 className="w-4 h-4 animate-spin" /> : "Create alert"}
+          </Button>
+          <Button onClick={onCancel} variant="outline" className="h-11 rounded-lg border-border hover:bg-surface">
+            Cancel
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 

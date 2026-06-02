@@ -42,10 +42,12 @@ export async function GET(request: NextRequest) {
     const unsuccessful = resolved.filter(s => s.status === "UNSUCCESSFUL");
     const expired = resolved.filter(s => s.status === "EXPIRED");
 
-    const totalResolved = successful.length + unsuccessful.length;
+    // Win rate counts every resolved signal: expired setups count as losses
+    // (only target hits count as wins), so the figure is not inflated.
+    const totalResolved = resolved.length;
     const winRate = totalResolved > 0 ? (successful.length / totalResolved) * 100 : 0;
-    const avgReturn = totalResolved > 0 
-      ? resolved.reduce((sum, s) => sum + (s.returnPct || 0), 0) / resolved.length 
+    const avgReturn = totalResolved > 0
+      ? resolved.reduce((sum, s) => sum + (s.returnPct || 0), 0) / totalResolved
       : 0;
 
     // Calculate streaks chronologically

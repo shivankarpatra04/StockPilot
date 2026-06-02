@@ -10,6 +10,7 @@ import { Loader2, TrendingUp, TrendingDown, Target, ShieldCheck, Activity, LineC
 import AIVerdictCard from "@/components/AIVerdictCard";
 import { cn } from "@/lib/utils";
 import { useAppStore } from "@/store/useAppStore";
+import { modeFromSimple, t } from "@/lib/lang";
 
 import SimpleReportCard from "@/components/SimpleReportCard";
 
@@ -53,6 +54,7 @@ interface AnalysisResult {
 export default function BuySellZones() {
   const searchParams = useSearchParams();
   const { analysisDays, isSimpleMode, toggleSimpleMode } = useAppStore();
+  const mode = modeFromSimple(isSimpleMode);
   const defaultSymbol = searchParams.get("symbol") || "RELIANCE:NSE";
   const [symbol, setSymbol] = useState(defaultSymbol);
   const [isMounted, setIsMounted] = useState(false);
@@ -237,7 +239,7 @@ export default function BuySellZones() {
                 <div className="flex items-center gap-2 mb-2 border-b border-border pb-2">
                   <TrendingUp className="w-5 h-5 text-secondary" />
                   <h3 id="buy-zones" className="text-lg font-semibold text-text-primary">
-                    {isSimpleMode ? "Good Prices to Buy At" : "Buy Zones"}
+                    {t(mode, "buyZones")}
                   </h3>
                 </div>
                 {result.buyZones && result.buyZones.length > 0 ? (
@@ -267,7 +269,7 @@ export default function BuySellZones() {
                 <div className="flex items-center gap-2 mb-2 border-b border-border pb-2">
                   <TrendingDown className="w-5 h-5 text-danger" />
                   <h3 id="sell-zones" className="text-lg font-semibold text-text-primary">
-                    {isSimpleMode ? "Good Prices to Sell At" : "Sell Zones"}
+                    {t(mode, "sellZones")}
                   </h3>
                 </div>
                 {result.sellZones && result.sellZones.length > 0 ? (
@@ -300,7 +302,7 @@ export default function BuySellZones() {
               <div className="flex items-center gap-2 mb-4">
                 <Activity className="w-5 h-5 text-primary" />
                 <h3 className="text-lg font-semibold text-text-primary">
-                  {isSimpleMode ? "Chance of Success" : "Trade Probability (Long)"}
+                  {isSimpleMode ? t(mode, "successChance") : "Trade Probability (Long) — chance of profit"}
                 </h3>
               </div>
               
@@ -346,13 +348,13 @@ export default function BuySellZones() {
               <div className="flex items-center gap-2 mb-4">
                 <LineChart className="w-5 h-5 text-primary" />
                 <h3 className="text-lg font-semibold text-text-primary">
-                  {isSimpleMode ? "Important Numbers" : "Key Levels & Metrics"}
+                  {t(mode, "keyLevels")}
                 </h3>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="p-4 rounded-xl border border-secondary/20 bg-secondary/5">
                   <p className="text-xs font-medium text-text-muted mb-1">
-                    {isSimpleMode ? "Risk vs Reward" : "Risk / Reward"}
+                    {t(mode, "riskReward")}
                   </p>
                   <p className="text-xl font-bold text-secondary">{result.keyMetrics.riskReward}</p>
                 </div>

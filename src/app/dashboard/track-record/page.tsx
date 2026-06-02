@@ -105,6 +105,15 @@ export default function TrackRecordPage() {
   const strategyData = data?.strategyData || [];
   const signals = data?.signals || [];
 
+  // Live portfolio growth from the simulated balance curve (₹100,000 base).
+  const STARTING_BALANCE = 100000;
+  const portfolioGrowth =
+    chartData.length > 0
+      ? ((chartData[chartData.length - 1].balance - STARTING_BALANCE) /
+          STARTING_BALANCE) *
+        100
+      : 0;
+
   return (
     <div className="space-y-8 animate-fade-in pb-12">
       {/* Page Header */}
@@ -117,8 +126,8 @@ export default function TrackRecordPage() {
           <h1 className="text-3xl font-bold text-text-primary">Track Record</h1>
           <p className="text-text-muted text-sm mt-1">
             {isSimpleMode
-              ? "See how many of our recommended setups were successful vs unsuccessful in real-time."
-              : "Verifiable mathematical accuracy. Every generated signal backtested continuously against live candles."}
+              ? "Dekho hamari kitni tips sahi nikli aur kitni galat 📊 — sab real-time me."
+              : "See how many of our past calls turned out right vs wrong. Every signal is checked against real prices, so the numbers are honest."}
           </p>
         </div>
 
@@ -163,13 +172,13 @@ export default function TrackRecordPage() {
                 <div className="flex justify-between items-start">
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">
-                      {isSimpleMode ? "Success Rate" : "Win Rate (Accuracy)"}
+                      {isSimpleMode ? "Kitni tips sahi nikli ✅" : "Win Rate — how often calls were right"}
                     </span>
                     <h3 className="text-3xl font-black text-secondary tracking-tight">
                       {stats.winRate}%
                     </h3>
                     <p className="text-xs text-text-muted">
-                      Across <span className="font-bold text-text-primary">{stats.successful + stats.unsuccessful}</span> completed setups
+                      Across <span className="font-bold text-text-primary">{stats.successful + stats.unsuccessful + stats.expired}</span> completed setups
                     </p>
                   </div>
                   <div className="w-12 h-12 rounded-xl bg-secondary/10 flex items-center justify-center text-secondary border border-secondary/20 shadow-glow-sm">
@@ -191,7 +200,7 @@ export default function TrackRecordPage() {
                 <div className="flex justify-between items-start">
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">
-                      {isSimpleMode ? "Hypothetical Growth" : "Simulated Yield (ROI)"}
+                      {isSimpleMode ? "Maan lo kitna badhta 📈" : "If you had followed all calls — total return"}
                     </span>
                     <h3 className="text-3xl font-black text-primary tracking-tight">
                       {stats.avgReturn >= 0 ? "+" : ""}{stats.avgReturn.toFixed(1)}%
@@ -204,10 +213,21 @@ export default function TrackRecordPage() {
                     <TrendingUp className="w-6 h-6" />
                   </div>
                 </div>
-                <div className="mt-4 flex items-center gap-1.5 text-xs font-semibold text-secondary">
-                  <ArrowUpRight className="w-4 h-4" />
-                  <span>Simulated portfolio grew +34.6%</span>
-                </div>
+                {chartData.length > 0 && (
+                  <div
+                    className={cn(
+                      "mt-4 flex items-center gap-1.5 text-xs font-semibold",
+                      portfolioGrowth >= 0 ? "text-secondary" : "text-danger"
+                    )}
+                  >
+                    <ArrowUpRight className="w-4 h-4" />
+                    <span>
+                      Simulated portfolio {portfolioGrowth >= 0 ? "grew" : "fell"}{" "}
+                      {portfolioGrowth >= 0 ? "+" : ""}
+                      {portfolioGrowth.toFixed(1)}%
+                    </span>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -217,7 +237,7 @@ export default function TrackRecordPage() {
                 <div className="flex justify-between items-start">
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">
-                      {isSimpleMode ? "Active Winning Streak" : "Current Winning Streak"}
+                      {isSimpleMode ? "Lagataar sahi tips 🔥" : "Current Winning Streak — calls right in a row"}
                     </span>
                     <h3 className="text-3xl font-black text-amber-500 tracking-tight flex items-center gap-1">
                       {stats.currentStreak} Wins <Flame className="w-6 h-6 fill-amber-500 text-amber-500 animate-bounce" />
@@ -230,9 +250,11 @@ export default function TrackRecordPage() {
                     <Flame className="w-6 h-6 fill-amber-500" />
                   </div>
                 </div>
-                <div className="mt-4 text-[10px] bg-amber-500/10 text-amber-400 font-bold px-2 py-0.5 border border-amber-500/20 rounded-md w-fit uppercase">
-                  Streak is Active 🔥
-                </div>
+                {stats.currentStreak > 0 && (
+                  <div className="mt-4 text-[10px] bg-amber-500/10 text-amber-400 font-bold px-2 py-0.5 border border-amber-500/20 rounded-md w-fit uppercase">
+                    Streak is Active 🔥
+                  </div>
+                )}
               </CardContent>
             </Card>
 
@@ -242,7 +264,7 @@ export default function TrackRecordPage() {
                 <div className="flex justify-between items-start">
                   <div className="space-y-1.5">
                     <span className="text-[10px] text-text-muted font-bold uppercase tracking-wider block">
-                      {isSimpleMode ? "Avg Target Hit Speed" : "Avg Hold Time to Resolution"}
+                      {isSimpleMode ? "Target tak ka average time ⏱️" : "Average time a call took to play out"}
                     </span>
                     <h3 className="text-3xl font-black text-text-primary tracking-tight">
                       {stats.avgDurationDays} Days
@@ -268,7 +290,7 @@ export default function TrackRecordPage() {
             <Card className="lg:col-span-2 bg-card border border-border">
               <CardHeader className="p-6 pb-2">
                 <CardTitle className="text-lg font-bold">
-                  {isSimpleMode ? "Hypothetical Growth Curve" : "Simulated Performance Growth"}
+                  {isSimpleMode ? "Paisa kaise badhta — graph 📈" : "How the returns added up over time"}
                 </CardTitle>
                 <CardDescription>
                   Cumulative return curve of a ₹100,000 portfolio allocating ₹10,000 per signal trade
@@ -336,7 +358,7 @@ export default function TrackRecordPage() {
             <Card className="bg-card border border-border">
               <CardHeader className="p-6 pb-2">
                 <CardTitle className="text-lg font-bold">
-                  {isSimpleMode ? "Accuracy By Setup Type" : "Success Rate By Strategy"}
+                  {isSimpleMode ? "Kaunsi strategy kitni sahi 🎯" : "How well each strategy did"}
                 </CardTitle>
                 <CardDescription>
                   Win rates of individual signal generation algorithms
@@ -534,11 +556,11 @@ export default function TrackRecordPage() {
                                   {signal.direction}
                                 </Badge>
                               </td>
-                              <td className="px-6 py-4 font-bold text-text-primary">₹{signal.entryPrice}</td>
+                              <td className="px-6 py-4 font-bold text-text-primary">₹{Number(signal.entryPrice).toFixed(2)}</td>
                               <td className="px-6 py-4 font-medium">
                                 <div className="flex flex-col gap-1 text-[10px]">
-                                  <span className="text-secondary font-bold">Tgt: ₹{signal.targetPrice}</span>
-                                  <span className="text-danger font-bold">SL: ₹{signal.stopLoss}</span>
+                                  <span className="text-secondary font-bold">Tgt: ₹{Number(signal.targetPrice).toFixed(2)}</span>
+                                  <span className="text-danger font-bold">SL: ₹{Number(signal.stopLoss).toFixed(2)}</span>
                                 </div>
                               </td>
                               <td className="px-6 py-4">

@@ -43,11 +43,29 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     }
 
     const body = await request.json();
-    const { symbol, condition, targetPrice } = body;
+    const { symbol, condition, targetPrice, alertType, note } = body;
 
     if (!symbol || !condition || targetPrice === undefined) {
       return NextResponse.json<ApiError>(
         { error: "Missing required fields" },
+        { status: 400 }
+      );
+    }
+
+    if (condition !== "above" && condition !== "below") {
+      return NextResponse.json<ApiError>(
+        { error: "condition must be 'above' or 'below'" },
+        { status: 400 }
+      );
+    }
+
+    const ALLOWED_TYPES = ["TARGET", "STOP_LOSS", "BUY_ZONE", "SELL_ZONE", "CUSTOM"];
+    const type = ALLOWED_TYPES.includes(alertType) ? alertType : "CUSTOM";
+
+    const price = parseFloat(targetPrice);
+    if (isNaN(price) || price <= 0) {
+      return NextResponse.json<ApiError>(
+        { error: "targetPrice must be a positive number" },
         { status: 400 }
       );
     }
@@ -57,7 +75,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         userId: session.user.id,
         symbol: symbol.toUpperCase(),
         condition,
-        targetPrice: parseFloat(targetPrice),
+        alertType: type,
+        note: typeof note === "string" ? note.slice(0, 200) : null,
+        targetPrice: price,
       },
     });
 
@@ -121,13 +141,31 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
     }
 
     const body = await request.json();
-    const { id, triggered } = body;
+    const { id, triggered, seen, markAllSeen } = body;
 
-    if (!id || triggered === undefined) {
+    // Mark every triggered alert as seen (used when the user opens the notification panel).
+    if (markAllSeen) {
+      await prisma.alert.updateMany({
+        where: { userId: session.user.id, triggered: true, seen: false },
+        data: { seen: true },
+      });
+      return NextResponse.json({ success: true });
+    }
+
+    if (!id || (triggered === undefined && seen === undefined)) {
       return NextResponse.json<ApiError>(
         { error: "Missing required fields" },
         { status: 400 }
       );
+    }
+
+    const data: { triggered?: boolean; triggeredAt?: Date | null; seen?: boolean } = {};
+    if (triggered !== undefined) {
+      data.triggered = triggered;
+      data.triggeredAt = triggered ? new Date() : null;
+    }
+    if (seen !== undefined) {
+      data.seen = seen;
     }
 
     const alert = await prisma.alert.update({
@@ -135,10 +173,7 @@ export async function PATCH(request: NextRequest): Promise<NextResponse> {
         id,
         userId: session.user.id,
       },
-      data: {
-        triggered,
-        triggeredAt: triggered ? new Date() : null,
-      },
+      data,
     });
 
     return NextResponse.json(alert);

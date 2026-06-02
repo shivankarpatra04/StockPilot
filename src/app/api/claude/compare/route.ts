@@ -2,12 +2,14 @@
 
 import { NextRequest, NextResponse } from "next/server";
 
+import { isMode, type Mode } from "@/lib/lang";
 import type { ClaudeResponse, ApiError } from "@/types";
 
 interface CompareRequestBody {
   symbols: string[];
   scores: number[];
   days?: number;
+  mode?: string;
 }
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
@@ -29,14 +31,24 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       );
     }
 
+    const mode: Mode = isMode(body.mode) ? body.mode : "expert";
+
     // Algorithmic comparison instead of AI
     let bestIdx = 0;
     for (let i = 1; i < body.scores.length; i++) {
         if (body.scores[i] > body.scores[bestIdx]) bestIdx = i;
     }
-    const bestSymbol = body.symbols[bestIdx];
-    
-    const text = `Based on recent data analysis over a ${body.days || 30}-day horizon, ${bestSymbol} appears to be the strongest pick among the group. It currently holds the highest technical score of ${body.scores[bestIdx]}, showing better momentum and relative strength compared to its peers.`;
+    const bestSymbol = body.symbols[bestIdx].split(":")[0];
+    const bestScore = body.scores[bestIdx];
+    const days = body.days || 30;
+
+    const text = mode === "simple"
+      ? `Pichle ${days} dino ke data ke hisaab se, in sab me se ${bestSymbol} sabse strong lag raha hai 🏆. ` +
+        `Iska score sabse zyada hai (${bestScore} me se 100), matlab iski chaal baaki sab se behtar hai 📈. ` +
+        `Par yaad rakhna — ye pakki tip nahi, apne advisor se zaroor poochho 🙏`
+      : `Looking at the last ${days} days, ${bestSymbol} comes out as the strongest pick in this group. ` +
+        `It has the highest health score (${bestScore} out of 100), which means its price trend and strength are better than the others right now. ` +
+        `This is for learning only — please check with your advisor before acting.`;
 
     return NextResponse.json<ClaudeResponse>({ text });
   } catch (err) {

@@ -39,10 +39,18 @@ const TYPE_CONFIG: Record<string, { icon: any; color: string; bg: string; border
   "Hidden Gem": { icon: Gem, color: "text-purple-400", bg: "bg-purple-500/10", border: "border-purple-500/30" },
 };
 
-function OpportunityCard({ opp }: { opp: Opportunity }) {
+const TYPE_LABEL_SIMPLE: Record<string, string> = {
+  "Strong Buy": "Pakka Buy 🟢",
+  "Oversold Bounce": "Gir ke uthega 🔄",
+  "Momentum Play": "Tezi me 🚀",
+  "Hidden Gem": "Chhupa heera 💎",
+};
+
+function OpportunityCard({ opp, isSimpleMode }: { opp: Opportunity; isSimpleMode: boolean }) {
   const config = TYPE_CONFIG[opp.type] || TYPE_CONFIG["Strong Buy"];
   const Icon = config.icon;
   const isPositive = opp.change >= 0;
+  const typeLabel = isSimpleMode ? (TYPE_LABEL_SIMPLE[opp.type] ?? opp.type) : opp.type;
 
   return (
     <div className={`rounded-xl border ${config.border} ${config.bg} p-4 hover:scale-[1.01] transition-all duration-200 group`}>
@@ -66,7 +74,7 @@ function OpportunityCard({ opp }: { opp: Opportunity }) {
 
       <div className="flex items-center gap-2 mb-2">
         <Badge variant="outline" className={`text-[9px] px-1.5 py-0.5 font-bold ${config.color} border-current`}>
-          {opp.type}
+          {typeLabel}
         </Badge>
         <Badge variant="outline" className="text-[9px] px-1.5 py-0.5 text-text-muted">
           {opp.sector}
@@ -77,22 +85,22 @@ function OpportunityCard({ opp }: { opp: Opportunity }) {
 
       <div className="grid grid-cols-3 gap-1.5 mb-3">
         <div className="text-center p-1.5 bg-background/40 rounded-lg">
-          <div className="text-[8px] text-text-muted font-semibold">SCORE</div>
+          <div className="text-[8px] text-text-muted font-semibold">{isSimpleMode ? "SCORE 📊" : "SCORE"}</div>
           <div className={`text-xs font-black ${config.color}`}>{opp.score}%</div>
         </div>
-        <div className="text-center p-1.5 bg-background/40 rounded-lg">
-          <div className="text-[8px] text-text-muted font-semibold">RSI</div>
+        <div className="text-center p-1.5 bg-background/40 rounded-lg" title={isSimpleMode ? "Stock kitna garam ya thanda hai (0–100)" : "RSI: a 0–100 momentum meter"}>
+          <div className="text-[8px] text-text-muted font-semibold">{isSimpleMode ? "GARMI (RSI)" : "RSI"}</div>
           <div className="text-xs font-black text-text-primary">{opp.rsi}</div>
         </div>
         <div className="text-center p-1.5 bg-background/40 rounded-lg">
-          <div className="text-[8px] text-green-400 font-semibold">TARGET</div>
+          <div className="text-[8px] text-green-400 font-semibold">{isSimpleMode ? "TARGET 🎯" : "TARGET"}</div>
           <div className="text-xs font-black text-green-400">₹{opp.target}</div>
         </div>
       </div>
 
       <Link href={`/dashboard/analysis?symbol=${encodeURIComponent(opp.symbol)}`}>
         <Button variant="ghost" size="sm" className={`w-full h-7 text-[10px] font-bold ${config.color} hover:${config.bg}`}>
-          Analyze <ChevronRight className="w-3 h-3 ml-1" />
+          {isSimpleMode ? "Poori jaankari" : "Analyze"} <ChevronRight className="w-3 h-3 ml-1" />
         </Button>
       </Link>
     </div>
@@ -100,7 +108,7 @@ function OpportunityCard({ opp }: { opp: Opportunity }) {
 }
 
 export default function HiddenOpportunities() {
-  const { analysisDays } = useAppStore();
+  const { analysisDays, isSimpleMode } = useAppStore();
   const [data, setData] = useState<OpportunitiesData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<"strongBuys" | "oversold" | "momentum" | "hiddenGems">("hiddenGems");
@@ -109,7 +117,7 @@ export default function HiddenOpportunities() {
     async function fetchOpps() {
       setLoading(true);
       try {
-        const res = await fetch(`/api/opportunities?days=${analysisDays}`);
+        const res = await fetch(`/api/opportunities?days=${analysisDays}&mode=${isSimpleMode ? "simple" : "expert"}`);
         if (res.ok) setData(await res.json());
       } catch (e) {
         console.error("Failed to fetch opportunities", e);
@@ -118,13 +126,13 @@ export default function HiddenOpportunities() {
       }
     }
     fetchOpps();
-  }, [analysisDays]);
+  }, [analysisDays, isSimpleMode]);
 
   const tabs: { key: typeof activeTab; label: string; icon: any; color: string }[] = [
-    { key: "hiddenGems", label: "Hidden Gems", icon: Gem, color: "text-purple-400" },
-    { key: "strongBuys", label: "Strong Buys", icon: TrendingUp, color: "text-green-400" },
-    { key: "oversold", label: "Oversold", icon: ArrowDownCircle, color: "text-blue-400" },
-    { key: "momentum", label: "Momentum", icon: Zap, color: "text-yellow-400" },
+    { key: "hiddenGems", label: isSimpleMode ? "Chhupe heere 💎" : "Hidden Gems", icon: Gem, color: "text-purple-400" },
+    { key: "strongBuys", label: isSimpleMode ? "Pakka Buy 🟢" : "Strong Buys", icon: TrendingUp, color: "text-green-400" },
+    { key: "oversold", label: isSimpleMode ? "Gir ke uthega 🔄" : "Oversold", icon: ArrowDownCircle, color: "text-blue-400" },
+    { key: "momentum", label: isSimpleMode ? "Tezi me 🚀" : "Momentum", icon: Zap, color: "text-yellow-400" },
   ];
 
   const currentList = data ? data[activeTab] : [];
@@ -178,7 +186,7 @@ export default function HiddenOpportunities() {
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3">
           {currentList.map(opp => (
-            <OpportunityCard key={opp.symbol} opp={opp} />
+            <OpportunityCard key={opp.symbol} opp={opp} isSimpleMode={isSimpleMode} />
           ))}
         </div>
       )}

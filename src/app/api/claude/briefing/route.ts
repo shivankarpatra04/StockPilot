@@ -91,107 +91,110 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     let data: any;
 
     if (mode === "expert") {
+      // "Expert" = plain, beginner-friendly ENGLISH. Jargon is explained inline.
+      const moodWord =
+        sentiment === "Bullish" ? "mostly going up" :
+        sentiment === "Bearish" ? "mostly going down" : "mixed — no clear direction";
+
       data = {
         mode: "expert",
-        title: `Market Briefing — ${sentiment} · ${today}`,
-        summary: `${days}-day scan of ${total} Nifty 500 stocks shows ${gainers} gainers and ${losers} losers. ` +
-          `Market breadth is ${sentiment.toLowerCase()}, with ${((gainers / total) * 100).toFixed(0)}% of stocks advancing. ` +
-          (topSector
-            ? `${topSector.name} leads all sectors at ${pct(topSector.avg)} average move. `
-            : "") +
+        title: `Today's Market Update — ${today}`,
+        summary: `Out of ${total} big Indian companies we track, ${gainers} went up and ${losers} went down over the last ${days} days. ` +
+          `So the market is ${moodWord} right now (about ${((gainers / total) * 100).toFixed(0)} out of every 100 stocks are rising). ` +
+          (topSector ? `The ${topSector.name} group of companies is doing best, ${pct(topSector.avg)} on average. ` : "") +
           (weakSector && weakSector.name !== topSector?.name
-            ? `${weakSector.name} is the laggard at ${pct(weakSector.avg)}.`
+            ? `The ${weakSector.name} group is the weakest at ${pct(weakSector.avg)}.`
             : ""),
         bulletPoints: [
           topSector && secondSector
             ? {
-                label: `Sector Rotation — ${topSector.name} ${topSector.avg >= 0 ? "↑" : "↓"}`,
-                text: `${topSector.name} (${pct(topSector.avg)}) and ${secondSector.name} (${pct(secondSector.avg)}) are leading the rotation. ${weakSector?.name} (${pct(weakSector?.avg ?? 0)}) is underperforming — watch for catch-up setups there.`,
+                label: `Strongest groups: ${topSector.name} & ${secondSector.name}`,
+                text: `Money is flowing into ${topSector.name} (${pct(topSector.avg)}) and ${secondSector.name} (${pct(secondSector.avg)}). The ${weakSector?.name} group (${pct(weakSector?.avg ?? 0)}) is lagging — it may catch up later, so keep an eye on it.`,
               }
-            : { label: "Sector Data", text: "Insufficient sector data for this timeframe." },
+            : { label: "Sectors", text: "Not enough sector data for this time period yet." },
           topGainer && topLoser
             ? {
-                label: `Top Mover — ${name(topGainer)} ${pct(topGainer.change)}`,
-                text: `${name(topGainer)} leads all gainers at ${pct(topGainer.change)} with buy score ${topGainer.score}. On the downside, ${name(topLoser)} has dropped ${pct(topLoser.change)}. ` +
-                  (topLoser.rsi < 40 ? `RSI at ${topLoser.rsi} — potential reversal zone forming.` : `Monitor ${name(topLoser)} for continuation risk.`),
+                label: `Biggest mover: ${name(topGainer)} ${pct(topGainer.change)}`,
+                text: `${name(topGainer)} is the top gainer at ${pct(topGainer.change)}, with a health score of ${topGainer.score} out of 100. On the other side, ${name(topLoser)} fell ${pct(topLoser.change)}. ` +
+                  (topLoser.rsi < 40 ? `It now looks oversold (beaten down too much), so it could bounce back.` : `Watch ${name(topLoser)} in case it keeps falling.`),
               }
-            : { label: "Price Action", text: "Price data loading." },
+            : { label: "Price action", text: "Price data is loading." },
           topScore
             ? {
-                label: `Highest Buy Score — ${name(topScore)} · ${topScore.score}%`,
-                text: `${name(topScore)} ranks #1 with a buy score of ${topScore.score}% over the last ${days} days. ${topScore.reasoning}`,
+                label: `Best-rated stock: ${name(topScore)} · ${topScore.score}/100`,
+                text: `${name(topScore)} has the highest health score (${topScore.score} out of 100) over the last ${days} days. In plain terms: its price trend and strength look the best in the list right now.`,
               }
-            : { label: "Top Signal", text: "Signal data loading." },
+            : { label: "Top pick", text: "Pick data is loading." },
         ].filter(Boolean),
         checklist: [
           {
             id: "e1",
-            text: `Review ${topSector?.name ?? "leading"} sector stocks — sector is up ${pct(topSector?.avg ?? 0)} over ${days}D`,
+            text: `Take a look at ${topSector?.name ?? "the leading"} stocks — this group is up ${pct(topSector?.avg ?? 0)} over ${days} days.`,
           },
           {
             id: "e2",
             text: topScore
-              ? `Consider ${name(topScore)} as a primary entry — buy score ${topScore.score}%, ${pct(topScore.change)} over ${days}D`
-              : "Review high buy-score stocks from the Best Trade card",
+              ? `Study ${name(topScore)} first — it's the best-rated (${topScore.score}/100, ${pct(topScore.change)} over ${days} days). Never buy blindly; understand why.`
+              : "Open the Best Trade card to see today's top-rated stock.",
           },
           {
             id: "e3",
             text: oversold
-              ? `Watch ${name(oversold)} — RSI deeply oversold at ${oversold.rsi}, potential bounce setup forming`
-              : "Scan for oversold RSI (<35) setups in the Opportunities tab",
+              ? `Keep an eye on ${name(oversold)} — it looks oversold (fell too much), which sometimes leads to a bounce. Check with your advisor first.`
+              : "Browse the Opportunities tab for ready-to-study trade ideas.",
           },
         ],
       };
     } else {
-      // Simple mode — beginner-friendly language
+      // "Simple" = HINGLISH + emojis, for users not comfortable with English.
       const moodWord =
-        sentiment === "Bullish" ? "mostly going UP today" :
-        sentiment === "Bearish" ? "mostly going DOWN today" : "going sideways — mixed signals";
+        sentiment === "Bullish" ? "zyadatar UPAR ja raha hai 📈" :
+        sentiment === "Bearish" ? "zyadatar NEECHE ja raha hai 📉" : "mila-jula hai 🤷 — koi saaf direction nahi";
 
       data = {
         mode: "simple",
-        title: `Market Update — ${today}`,
-        summary: `Out of ${total} big Indian stocks, ${gainers} are going up and ${losers} are going down right now. ` +
-          `The overall market is ${moodWord}. ` +
-          (topSector ? `The ${topSector.name} sector is doing the best today.` : ""),
+        title: `Aaj ka Market Update — ${today} 👋`,
+        summary: `${total} badi Indian companies me se ${gainers} upar gayi 📈 aur ${losers} neeche aayi 📉 (pichle ${days} dino me). ` +
+          `Matlab market abhi ${moodWord}. ` +
+          (topSector ? `Sabse acche chal rahe hain ${topSector.name} ke stocks 🔥` : ""),
         bulletPoints: [
           topSector
             ? {
-                label: `Best sector today: ${topSector.name}`,
-                text: `${topSector.name} stocks are up an average of ${pct(topSector.avg)}. If you own stocks in this group, that's great news!`,
+                label: `🔥 Aaj ka best group: ${topSector.name}`,
+                text: `${topSector.name} ke stocks average ${pct(topSector.avg)} upar hain. Agar aapke paas in me se koi stock hai, toh ye acchi khabar hai 🎉`,
               }
-            : { label: "Sector Update", text: "Sector data is being processed." },
+            : { label: "Sector", text: "Sector ka data abhi taiyaar ho raha hai ⏳" },
           topGainer
             ? {
-                label: `Biggest winner: ${name(topGainer)}`,
-                text: `${name(topGainer)} is up ${pct(topGainer.change)} — one of the strongest movers right now. Our system gives it a confidence score of ${topGainer.score}%.`,
+                label: `🏆 Sabse bada winner: ${name(topGainer)}`,
+                text: `${name(topGainer)} aaj ${pct(topGainer.change)} upar hai — sabse strong stocks me se ek 💪. Hamara system ise ${topGainer.score}/100 score deta hai.`,
               }
-            : { label: "Top Gainer", text: "Data loading." },
+            : { label: "Top winner", text: "Data aa raha hai ⏳" },
           topScore
             ? {
-                label: `Today's smart pick: ${name(topScore)}`,
-                text: `Our AI gave ${name(topScore)} the highest buy signal (${topScore.score}%) based on its price pattern and trend over the last ${days} days.`,
+                label: `⭐ Aaj ki smart pick: ${name(topScore)}`,
+                text: `Hamare system ne ${name(topScore)} ko sabse zyada score diya (${topScore.score}/100) — kyunki pichle ${days} dino me iski chaal sabse achhi rahi 📈`,
               }
-            : { label: "Smart Pick", text: "Processing recommendations." },
+            : { label: "Smart pick", text: "Recommendation taiyaar ho rahi hai ⏳" },
         ].filter(Boolean),
         checklist: [
           {
             id: "s1",
             text: topScore
-              ? `Check out ${name(topScore)} — our #1 pick right now with ${topScore.score}% confidence`
-              : "Visit the Best Trade card for today's top recommendation",
+              ? `👉 ${name(topScore)} ko dekho — abhi hamari #1 pick hai (${topScore.score}/100 score).`
+              : "Best Trade card kholo — aaj ki top pick wahan milegi.",
           },
           {
             id: "s2",
             text: topSector
-              ? `Look at ${topSector.name} stocks — this sector is the market leader today`
-              : "Explore the Sector Heatmap to see which sectors are moving",
+              ? `👀 ${topSector.name} ke stocks par nazar daalo — ye group aaj market me sabse aage hai.`
+              : "Sector Heatmap dekho — pata chalega kaunsa group hil raha hai.",
           },
           {
             id: "s3",
             text: oversold
-              ? `${name(oversold)} looks oversold — may bounce back soon. Beginners: check with your advisor first`
-              : "Review the Opportunities page for ready-to-act trade ideas",
+              ? `${name(oversold)} kaafi gir chuka hai — wapas upar aa sakta hai 🔄. Beginners: pehle apne advisor se poochho 🙏`
+              : "Opportunities page dekho — ready trade ideas wahan milenge.",
           },
         ],
       };

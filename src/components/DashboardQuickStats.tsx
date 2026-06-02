@@ -1,7 +1,7 @@
 // filepath: src/components/DashboardQuickStats.tsx
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useAppStore } from "@/store/useAppStore";
 import { formatScanAge } from "@/lib/format-scan-age";
 import {
@@ -12,6 +12,7 @@ import {
   Lightbulb,
   Clock,
   ArrowRight,
+  RefreshCw,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -33,61 +34,70 @@ export default function DashboardQuickStats() {
   const { analysisDays, isSimpleMode } = useAppStore();
   const [stats, setStats] = useState<QuickStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const loadStats = useCallback(async () => {
+    setLoading(true);
+    try {
+      const [marketRes, bestRes, oppsRes] = await Promise.all([
+        fetch(`/api/market-stats?days=${analysisDays}`).catch(() => null),
+        fetch("/api/best-trade", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ days: analysisDays }),
+        }).catch(() => null),
+        fetch(`/api/opportunities?days=${analysisDays}`).catch(() => null),
+      ]);
+
+      const market = marketRes?.ok ? await marketRes.json() : null;
+      const best = bestRes?.ok ? await bestRes.json() : null;
+      const opps = oppsRes?.ok ? await oppsRes.json() : null;
+
+      const oppCount =
+        (opps?.earningsPlays?.length ?? 0) +
+        (opps?.breakoutPlays?.length ?? 0) +
+        (opps?.swingTrades?.length ?? 0) +
+        (opps?.sectorTrades?.length ?? 0);
+
+      setStats({
+        sentiment: (market?.sentiment as Sentiment) ?? "Neutral",
+        gainers: market?.gainers ?? 0,
+        losers: market?.losers ?? 0,
+        total:
+          (market?.gainers ?? 0) +
+          (market?.losers ?? 0) +
+          (market?.unchanged ?? 0),
+        bestSymbol: best?.bestTrade?.symbol ?? null,
+        bestName:
+          best?.bestTrade?.shortName ??
+          best?.bestTrade?.symbol?.split(":")[0] ??
+          null,
+        bestScore: best?.bestTrade?.score ?? null,
+        opportunities: oppCount,
+        dataAsOf: opps?.dataAsOf ?? best?.dataAsOf ?? null,
+      });
+    } catch {
+      /* non-fatal */
+    } finally {
+      setLoading(false);
+    }
+  }, [analysisDays]);
 
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      setLoading(true);
-      try {
-        const [marketRes, bestRes, oppsRes] = await Promise.all([
-          fetch(`/api/market-stats?days=${analysisDays}`).catch(() => null),
-          fetch("/api/best-trade", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ days: analysisDays }),
-          }).catch(() => null),
-          fetch(`/api/opportunities?days=${analysisDays}`).catch(() => null),
-        ]);
+    loadStats();
+  }, [loadStats]);
 
-        const market = marketRes?.ok ? await marketRes.json() : null;
-        const best = bestRes?.ok ? await bestRes.json() : null;
-        const opps = oppsRes?.ok ? await oppsRes.json() : null;
-
-        const oppCount =
-          (opps?.earningsPlays?.length ?? 0) +
-          (opps?.breakoutPlays?.length ?? 0) +
-          (opps?.swingTrades?.length ?? 0) +
-          (opps?.sectorTrades?.length ?? 0);
-
-        if (cancelled) return;
-        setStats({
-          sentiment: (market?.sentiment as Sentiment) ?? "Neutral",
-          gainers: market?.gainers ?? 0,
-          losers: market?.losers ?? 0,
-          total:
-            (market?.gainers ?? 0) +
-            (market?.losers ?? 0) +
-            (market?.unchanged ?? 0),
-          bestSymbol: best?.bestTrade?.symbol ?? null,
-          bestName:
-            best?.bestTrade?.shortName ??
-            best?.bestTrade?.symbol?.split(":")[0] ??
-            null,
-          bestScore: best?.bestTrade?.score ?? null,
-          opportunities: oppCount,
-          dataAsOf: opps?.dataAsOf ?? best?.dataAsOf ?? null,
-        });
-      } catch {
-        /* non-fatal */
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
+  // Manual "refresh prices now" — pulls fresh live prices, then reloads stats
+  // so the Data Freshness card (and everything else) updates immediately.
+  const refreshPrices = useCallback(async () => {
+    setRefreshing(true);
+    try {
+      await fetch("/api/cron/refresh-prices").catch(() => null);
+      await loadStats();
+    } finally {
+      setRefreshing(false);
     }
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [analysisDays]);
+  }, [loadStats]);
 
   const sentimentMeta = (() => {
     const s = stats?.sentiment ?? "Neutral";
@@ -98,7 +108,7 @@ export default function DashboardQuickStats() {
         bg: "bg-emerald-500/10",
         border: "border-emerald-500/30",
         dot: "bg-emerald-400",
-        label: isSimpleMode ? "Market is UP" : "Bullish",
+        label: isSimpleMode ? "Market UPAR hai 📈" : "Bullish",
       };
     if (s === "Bearish")
       return {
@@ -107,7 +117,7 @@ export default function DashboardQuickStats() {
         bg: "bg-red-500/10",
         border: "border-red-500/30",
         dot: "bg-red-400",
-        label: isSimpleMode ? "Market is DOWN" : "Bearish",
+        label: isSimpleMode ? "Market NEECHE hai 📉" : "Bearish",
       };
     return {
       Icon: Minus,
@@ -115,7 +125,7 @@ export default function DashboardQuickStats() {
       bg: "bg-amber-500/10",
       border: "border-amber-500/30",
       dot: "bg-amber-400",
-      label: isSimpleMode ? "Mixed market" : "Neutral",
+      label: isSimpleMode ? "Mila-jula market 🤷" : "Neutral",
     };
   })();
 
@@ -154,7 +164,7 @@ export default function DashboardQuickStats() {
         accent="border-primary/30"
         bg="bg-primary/10"
         icon={<Trophy className="w-4 h-4 text-primary" />}
-        label={isSimpleMode ? "Today's Top Pick" : "Best Trade"}
+        label={isSimpleMode ? "Aaj ki Top Pick ⭐" : "Best Trade"}
         value={
           stats?.bestSymbol ? (
             <Link
@@ -183,7 +193,7 @@ export default function DashboardQuickStats() {
         accent="border-violet-500/30"
         bg="bg-violet-500/10"
         icon={<Lightbulb className="w-4 h-4 text-violet-400" />}
-        label={isSimpleMode ? "Trade Ideas" : "Open Opportunities"}
+        label={isSimpleMode ? "Trade Ideas 💡" : "Open Opportunities"}
         value={
           <Link
             href="/dashboard/opportunities"
@@ -195,7 +205,7 @@ export default function DashboardQuickStats() {
         }
         sub={
           isSimpleMode
-            ? "ready-to-act signals"
+            ? "ready signals 👇"
             : "across all 4 playbooks"
         }
       />
@@ -207,12 +217,24 @@ export default function DashboardQuickStats() {
         bg="bg-sky-500/10"
         icon={<Clock className="w-4 h-4 text-sky-400" />}
         label="Data Freshness"
+        action={
+          <button
+            onClick={refreshPrices}
+            disabled={refreshing || loading}
+            title="Refresh live prices now"
+            className="flex items-center justify-center w-6 h-6 rounded-md border border-sky-500/30 bg-sky-500/10 text-sky-300 hover:bg-sky-500/20 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${refreshing ? "animate-spin" : ""}`} />
+          </button>
+        }
         value={
           <span className="text-sky-300">
-            {formatScanAge(stats?.dataAsOf ?? undefined)}
+            {refreshing
+              ? "Refreshing…"
+              : formatScanAge(stats?.dataAsOf ?? undefined)}
           </span>
         }
-        sub={`${analysisDays}D timeframe`}
+        sub={refreshing ? "fetching live prices" : `${analysisDays}D timeframe`}
       />
     </div>
   );
@@ -226,6 +248,7 @@ function StatCard({
   label,
   value,
   sub,
+  action,
 }: {
   loading: boolean;
   accent: string;
@@ -234,6 +257,7 @@ function StatCard({
   label: string;
   value: React.ReactNode;
   sub: string;
+  action?: React.ReactNode;
 }) {
   return (
     <div
@@ -248,6 +272,7 @@ function StatCard({
           <span className="text-[10px] font-black uppercase tracking-wider text-text-muted">
             {label}
           </span>
+          {action && <span className="ml-auto">{action}</span>}
         </div>
         <div className="text-base font-extrabold leading-tight min-h-[24px]">
           {loading ? (

@@ -132,31 +132,31 @@ export default function MarketMoodDashboard({ userId }: MarketMoodDashboardProps
     score = Math.min(Math.max(score + timeframeModifier, 5), 95);
 
     let moodLabel = "Neutral";
-    let simpleMoodLabel = "Mixed Market";
+    let simpleMoodLabel = "Mila-jula Market 🤷";
     let moodColor = "text-warning";
     let moodGradient = "from-warning to-warning/50";
     
     if (score < 25) { 
-      moodLabel = "Extreme Fear"; 
-      simpleMoodLabel = "Great Time to Look for Deals";
+      moodLabel = "Extreme Fear";
+      simpleMoodLabel = "Deal dhoondne ka accha time 🛒";
       moodColor = "text-danger"; 
       moodGradient = "from-danger to-danger/50"; 
     }
     else if (score < 45) { 
-      moodLabel = "Fear"; 
-      simpleMoodLabel = "Be Patient";
+      moodLabel = "Fear";
+      simpleMoodLabel = "Thoda sabar karo ⏳";
       moodColor = "text-danger"; 
       moodGradient = "from-danger to-warning"; 
     }
     else if (score > 75) { 
-      moodLabel = "Extreme Greed"; 
-      simpleMoodLabel = "Be Careful!";
+      moodLabel = "Extreme Greed";
+      simpleMoodLabel = "Sambhal ke! ⚠️";
       moodColor = "text-success"; 
       moodGradient = "from-success to-success/50"; 
     }
     else if (score > 55) { 
-      moodLabel = "Greed"; 
-      simpleMoodLabel = "Things are Looking Up";
+      moodLabel = "Greed";
+      simpleMoodLabel = "Maahaul accha hai 📈";
       moodColor = "text-success"; 
       moodGradient = "from-success to-warning"; 
     }
@@ -270,12 +270,12 @@ export default function MarketMoodDashboard({ userId }: MarketMoodDashboardProps
             {isSimpleMode ? simpleMoodLabel : moodLabel}
           </h2>
           <p className="text-text-muted text-sm mt-2 max-w-md">
-            {isSimpleMode 
-              ? (score > 75 ? "Many people are buying, which means prices might be too high right now. It's best to be careful and not rush in." :
-                 score > 55 ? "The market is doing well and generally going up. A good time to stick to your investments." :
-                 score < 25 ? "People are scared and selling off. This is often the best time to find good stocks at cheaper prices!" :
-                 score < 45 ? "Prices are dropping and people are worried. Wait for a clearer sign before buying more." :
-                 "The market isn't going in a clear direction. It's a good time to just watch and see what happens.")
+            {isSimpleMode
+              ? (score > 75 ? "Bahut log khareed rahe hain, matlab daam abhi zyada ho sakte hain. Sambhal ke chalo, jaldbaazi mat karo 🙏" :
+                 score > 55 ? "Market accha chal raha hai, zyadatar upar ja raha hai 📈. Apne investments pe tike rehna theek hai." :
+                 score < 25 ? "Log dare hue hain aur bech rahe hain 😨. Aksar yahi acche stocks saste me milne ka time hota hai!" :
+                 score < 45 ? "Daam gir rahe hain aur log pareshaan hain. Aur khareedne se pehle saaf signal ka intezaar karo ⏳" :
+                 "Market ki direction saaf nahi hai 🤷. Abhi sirf dekho aur samjho ki kya ho raha hai.")
               : (score > 75 ? "Extreme optimism is driving prices higher. Beware of sudden pullbacks." :
                  score > 55 ? "Market participants are buying dips. Momentum is upward." :
                  score < 25 ? "Panic selling and capitulation are visible. Potential bottom forming." :
@@ -430,9 +430,9 @@ export default function MarketMoodDashboard({ userId }: MarketMoodDashboardProps
                   </div>
                 </div>
                 <p className="text-xs text-text-muted mt-4 border-t border-border pt-3">
-                  {isSimpleMode 
-                    ? `Your watched stocks are mostly ${wlMood.avg > 0 ? 'going up' : 'going down'} today. ${wlMood.avg > 0 && score < 50 ? 'They are doing better than the rest of the market!' : wlMood.avg < 0 && score > 50 ? 'They are not doing as well as the overall market today.' : 'They are moving just like the rest of the market.'}`
-                    : `Your portfolio skews <strong className={wlMood.avg > 0 ? 'text-success' : 'text-danger'}>${wlMood.avg > 0 ? 'Bullish' : 'Bearish'}</strong> today, ${wlMood.avg > 0 && score < 50 ? 'outperforming the broader fear sentiment.' : wlMood.avg < 0 && score > 50 ? 'lagging behind the broader greed sentiment.' : 'in line with broader market trends.'}`
+                  {isSimpleMode
+                    ? `Aapke watch kiye hue stocks aaj zyadatar ${wlMood.avg > 0 ? 'upar ja rahe hain 📈' : 'neeche ja rahe hain 📉'}. ${wlMood.avg > 0 && score < 50 ? 'Ye baaki market se behtar kar rahe hain! 🎉' : wlMood.avg < 0 && score > 50 ? 'Ye aaj baaki market jitna accha nahi kar rahe.' : 'Ye baaki market jaise hi chal rahe hain.'}`
+                    : `Your watched stocks are leaning ${wlMood.avg > 0 ? 'up (positive)' : 'down (negative)'} today, ${wlMood.avg > 0 && score < 50 ? 'doing better than the nervous overall market.' : wlMood.avg < 0 && score > 50 ? 'lagging behind the more upbeat overall market.' : 'moving in line with the overall market.'}`
                   }
                 </p>
               </CardContent>

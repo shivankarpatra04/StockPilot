@@ -12,12 +12,26 @@ import {
   getChangeColor,
   getCurrencySymbol,
 } from "@/lib/utils";
-import { TrendingUp, TrendingDown, Minus } from "lucide-react";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Crown,
+  Check,
+  AlertTriangle,
+  ShieldAlert,
+} from "lucide-react";
 import type { StockQuote, AIScore } from "@/types";
+import type { StockInsights } from "@/lib/compare";
 
 interface ComparisonCardProps {
   quote: StockQuote;
   aiScore: AIScore;
+  rank?: number;
+  isWinner?: boolean;
+  insights?: StockInsights;
+  /** Which metric rows this stock wins (best value across the comparison). */
+  metricWins?: { pe?: boolean; revGrowth?: boolean };
 }
 
 const labelVariant: Record<
@@ -30,14 +44,41 @@ const labelVariant: Record<
   Caution: "destructive",
 };
 
-export default function ComparisonCard({ quote, aiScore }: ComparisonCardProps) {
+export default function ComparisonCard({
+  quote,
+  aiScore,
+  rank,
+  isWinner,
+  insights,
+  metricWins,
+}: ComparisonCardProps) {
   const changePercent = quote.regularMarketChangePercent;
   const changeColor = getChangeColor(changePercent);
   const TrendIcon =
     changePercent > 0 ? TrendingUp : changePercent < 0 ? TrendingDown : Minus;
 
   return (
-    <Card className="hover:border-primary/40 hover:shadow-glow transition-all duration-300 animate-slide-up">
+    <Card
+      className={`relative transition-all duration-300 animate-slide-up ${
+        isWinner
+          ? "border-secondary/60 shadow-glow ring-1 ring-secondary/40"
+          : "hover:border-primary/40 hover:shadow-glow"
+      }`}
+    >
+      {/* Rank badge */}
+      {rank !== undefined && (
+        <div
+          className={`absolute -top-2.5 -left-2.5 z-10 flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-bold shadow-md ${
+            isWinner
+              ? "bg-secondary text-white"
+              : "bg-surface border border-border text-text-muted"
+          }`}
+        >
+          {isWinner ? <Crown className="w-3.5 h-3.5" /> : null}
+          {isWinner ? "Top Pick" : `#${rank}`}
+        </div>
+      )}
+
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
           <div>
@@ -48,10 +89,7 @@ export default function ComparisonCard({ quote, aiScore }: ComparisonCardProps) 
           </div>
           <AIScoreRing score={aiScore.score} size={72} />
         </div>
-        <Badge
-          variant={labelVariant[aiScore.label]}
-          className="w-fit mt-1"
-        >
+        <Badge variant={labelVariant[aiScore.label]} className="w-fit mt-1">
           {aiScore.label}
         </Badge>
       </CardHeader>
@@ -73,8 +111,15 @@ export default function ComparisonCard({ quote, aiScore }: ComparisonCardProps) 
 
         {/* Metrics Grid */}
         <div className="grid grid-cols-2 gap-2">
-          <MetricRow label="P/E Ratio" value={quote.trailingPE ? quote.trailingPE.toFixed(1) : "N/A"} />
-          <MetricRow label="Market Cap" value={formatLargeNumber(quote.marketCap, getCurrencySymbol(quote.currency))} />
+          <MetricRow
+            label="P/E Ratio"
+            value={quote.trailingPE ? quote.trailingPE.toFixed(1) : "N/A"}
+            best={metricWins?.pe}
+          />
+          <MetricRow
+            label="Market Cap"
+            value={formatLargeNumber(quote.marketCap, getCurrencySymbol(quote.currency))}
+          />
           <MetricRow
             label="52W High"
             value={formatCurrency(quote.fiftyTwoWeekHigh, quote.currency)}
@@ -91,45 +136,93 @@ export default function ComparisonCard({ quote, aiScore }: ComparisonCardProps) 
                 ? formatPercent(quote.revenueGrowth * 100)
                 : "N/A"
             }
+            best={metricWins?.revGrowth}
           />
         </div>
 
-        {/* Score Breakdown */}
-        <div className="pt-2 border-t border-border">
-          <p className="text-xs text-text-muted mb-2 font-medium">Score Factors</p>
-          <div className="flex flex-wrap gap-1.5">
-            {aiScore.breakdown.dayChangeLarge && (
-              <ScorePill label="Strong Momentum" />
-            )}
-            {!aiScore.breakdown.dayChangeLarge && aiScore.breakdown.dayChangePositive && (
-              <ScorePill label="Positive Day" />
-            )}
-            {aiScore.breakdown.highVolume && <ScorePill label="High Volume" />}
-            {aiScore.breakdown.aboveFiftyMA && <ScorePill label="Above 50MA" />}
-            {aiScore.breakdown.aboveTwoHundredMA && (
-              <ScorePill label="Above 200MA" />
-            )}
-            {aiScore.breakdown.lowPE && <ScorePill label="Value PE" />}
+        {/* Strengths */}
+        {insights && insights.strengths.length > 0 && (
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs text-text-muted mb-2 font-medium flex items-center gap-1.5">
+              <Check className="w-3.5 h-3.5 text-secondary" /> Strengths
+            </p>
+            <ul className="space-y-1">
+              {insights.strengths.map((s) => (
+                <li key={s} className="flex items-start gap-1.5 text-xs text-text-primary">
+                  <Check className="w-3 h-3 text-secondary flex-shrink-0 mt-0.5" />
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
           </div>
-        </div>
+        )}
+
+        {/* Weaknesses */}
+        {insights && insights.weaknesses.length > 0 && (
+          <div className="pt-2 border-t border-border">
+            <p className="text-xs text-text-muted mb-2 font-medium flex items-center gap-1.5">
+              <AlertTriangle className="w-3.5 h-3.5 text-yellow-400" /> Weaknesses
+            </p>
+            <ul className="space-y-1">
+              {insights.weaknesses.map((s) => (
+                <li key={s} className="flex items-start gap-1.5 text-xs text-text-muted">
+                  <Minus className="w-3 h-3 text-yellow-400 flex-shrink-0 mt-0.5" />
+                  <span>{s}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* Risk flags */}
+        {insights && insights.risks.length > 0 && (
+          <div className="pt-2 border-t border-border">
+            <div className="flex flex-wrap gap-1.5">
+              {insights.risks.map((r) => (
+                <span
+                  key={r}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs bg-danger/15 text-danger border border-danger/30"
+                >
+                  <ShieldAlert className="w-3 h-3 flex-shrink-0" />
+                  {r}
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
 }
 
-function MetricRow({ label, value }: { label: string; value: string }) {
+function MetricRow({
+  label,
+  value,
+  best,
+}: {
+  label: string;
+  value: string;
+  best?: boolean;
+}) {
   return (
-    <div className="bg-surface rounded-button p-2.5 border border-border">
-      <p className="text-xs text-text-muted">{label}</p>
-      <p className="text-sm font-semibold text-text-primary mt-0.5">{value}</p>
+    <div
+      className={`rounded-button p-2.5 border ${
+        best
+          ? "bg-secondary/10 border-secondary/40"
+          : "bg-surface border-border"
+      }`}
+    >
+      <p className="text-xs text-text-muted flex items-center gap-1">
+        {label}
+        {best && <Check className="w-3 h-3 text-secondary" />}
+      </p>
+      <p
+        className={`text-sm font-semibold mt-0.5 ${
+          best ? "text-secondary" : "text-text-primary"
+        }`}
+      >
+        {value}
+      </p>
     </div>
-  );
-}
-
-function ScorePill({ label }: { label: string }) {
-  return (
-    <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-primary/15 text-primary border border-primary/30">
-      {label}
-    </span>
   );
 }

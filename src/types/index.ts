@@ -68,14 +68,19 @@ export interface OpportunityStock extends StockQuote {
   label: "Early Breakout" | "Momentum Rising" | "Smart Money Entry";
 }
 
+export type AlertType = "TARGET" | "STOP_LOSS" | "BUY_ZONE" | "SELL_ZONE" | "CUSTOM";
+
 export interface AlertItem {
   id: string;
   userId: string;
   symbol: string;
   condition: string;
+  alertType: AlertType;
+  note?: string | null;
   targetPrice: number;
   triggered: boolean;
   triggeredAt?: Date;
+  seen: boolean;
   createdAt: Date;
 }
 

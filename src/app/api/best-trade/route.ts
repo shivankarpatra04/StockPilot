@@ -3,6 +3,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import type { ApiError } from "@/types";
+import { buildBuyReasoning, isMode, type Mode } from "@/lib/lang";
 import {
   categoriesFor,
   computeSectorAverages,
@@ -13,7 +14,9 @@ import {
 
 export async function POST(request: NextRequest): Promise<NextResponse> {
   try {
-    const { days = 30 } = await request.json();
+    const body = await request.json();
+    const { days = 30 } = body;
+    const mode: Mode = isMode(body.mode) ? body.mode : "expert";
 
     const cachedStocks = await prisma.scannedStock.findMany({
       orderBy: { lastUpdated: 'desc' }
@@ -160,7 +163,12 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
         currentPrice: best.currentPrice,
         change: best.change,
         score: best.score,
-        reasoning: best.reasoning,
+        reasoning: buildBuyReasoning(mode, {
+          score: best.score,
+          rsi: best.rsi,
+          support: best.support,
+          resistance: best.resistance,
+        }),
         support: best.support,
         resistance: best.resistance,
         stopLoss: best.stopLoss,

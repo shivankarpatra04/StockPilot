@@ -225,7 +225,7 @@ export default function SectorCatchUpTrades({ analysisDays, isSimpleMode, dynami
                         <div className="md:col-span-2 rounded-xl border border-sky-500/15 bg-sky-500/5 p-4">
                           <div className="flex items-center gap-2 mb-3">
                             <Brain className="w-4 h-4 text-sky-400" />
-                            <span className="text-[10px] font-black uppercase tracking-widest text-sky-400">AI Reasoning</span>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-sky-400">{isSimpleMode ? "Kyun? (AI ki salah 🧠)" : "AI Reasoning"}</span>
                           </div>
                           <p className="text-sm text-slate-400 leading-relaxed italic">{trade.reasoning}</p>
                         </div>

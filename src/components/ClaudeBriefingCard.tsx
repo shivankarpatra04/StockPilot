@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Sparkles, RefreshCw, Volume2, VolumeX, Play, Pause, Square, CheckCircle2, Circle, ListTodo } from "lucide-react";
 import { useState, useEffect, useCallback } from "react";
 import { useAppStore } from "@/store/useAppStore";
+import { modeFromSimple, t } from "@/lib/lang";
 
 interface BulletPoint {
   label: string;
@@ -152,7 +153,7 @@ export default function ClaudeBriefingCard() {
             <div className="min-w-0 flex-1">
               <CardTitle className="text-sm font-extrabold text-text-primary leading-snug">Briefing Overview & Focus Tasks</CardTitle>
               <p className="text-[10px] text-text-muted mt-0.5 truncate">
-                {isSimpleMode ? "Simplified Retail Mode" : "Professional Analytics Mode"}
+                {t(modeFromSimple(isSimpleMode), "briefingMode")}
               </p>
             </div>
           </div>

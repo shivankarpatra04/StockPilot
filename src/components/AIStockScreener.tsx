@@ -189,9 +189,11 @@ export default function AIStockScreener() {
         subtitle={
           !isLoading
             ? isSimpleMode
-              ? `Showing ${filteredStocks.length} stocks matching your filters. Click any card for full analysis.`
-              : `High-performance filters across ${filteredStocks.length} Nifty 500 assets.`
-            : "Perform quick multi-metric filtering across the Nifty 500 pool."
+              ? `📋 ${filteredStocks.length} stocks dikh rahe hain. Kisi bhi card par tap karke poori jaankari paao 👆`
+              : `Showing ${filteredStocks.length} stocks. Tap any card to see a plain-English breakdown.`
+            : isSimpleMode
+              ? "Nifty 500 me se stocks chhaant kar dikhata hai ⏳"
+              : "Quickly filter through the Nifty 500 list of stocks."
         }
         icon={<SlidersHorizontal className="w-5 h-5 text-primary" />}
         badge={
